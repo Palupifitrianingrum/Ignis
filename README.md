@@ -6,4 +6,4 @@ Ketua Kelompok:
 <br>Anggota 1: Nafal Zakin Rustanto</br>
 Anggota 2: Palupi Fitria Ningrum</br>
 Anggota 3: Natanael Sebastian Simanjuntak</br>
-Anggota 4: Wahyu Fajrin
+Anggota 4: Wahyu Fajrin Adi Putra

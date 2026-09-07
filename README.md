@@ -6,3 +6,5 @@ Anggota 1: Muhammad Nafal Zakin Rustanto-24/535255/TK/59364</br>
 Anggota 2: Wahyu Fajrin Adi Putra 24/548043/TK/59664</br>
 Anggota 3: Palupi Fitria Ningrum-24/540125/TK/59904</br>
 Anggota 4: Natanael Sebastian Simanjuntak-24/542676/TK/60273</br>
+
+<img width="976" height="901" alt="Screenshot 2026-09-06 110250" src="https://github.com/user-attachments/assets/60cad48f-895b-4efe-92ee-9420bfef6f2a" />

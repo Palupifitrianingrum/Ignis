@@ -2,6 +2,10 @@
 using System.Data;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
+using Ignis.Frontend.Views.Auth;
+using Ignis.Frontend.Navigation;
+using Ignis.Frontend.ViewModels.Auth;
+using Ignis.Frontend.ViewModels;
 
 namespace Ignis.Frontend;
 
@@ -20,7 +24,7 @@ public partial class App : Application
 
         base.OnStartup(e);
 
-        var mainWindow = new MainWindow();
+        var mainWindow = Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
     }
 
@@ -30,6 +34,15 @@ public partial class App : Application
         {
             client.BaseAddress = new Uri("https://localhost:5001/api/");
         });
+
+        services.AddSingleton<IDialogService, DialogService>();
+        services.AddTransient<LoginFormViewModel>();
+        services.AddTransient<LoginWindowViewModel>();
+        services.AddTransient<MainWindowViewModel>();
+
+        services.AddTransient<LoginView>();
+        services.AddTransient<LoginFormView>();
+        services.AddTransient<MainWindow>();
     }
 }
 

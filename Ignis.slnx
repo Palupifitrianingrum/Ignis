@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/frontend/">
+    <Project Path="frontend/Ignis.Frontend/Ignis.Frontend.csproj" />
+  </Folder>
+</Solution>

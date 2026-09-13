@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ignis.Frontend.ViewModels.Auth;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -17,9 +18,16 @@ namespace Ignis.Frontend.Views.Auth
     /// </summary>
     public partial class LoginView : Window
     {
-        public LoginView()
+        public LoginView(LoginWindowViewModel viewModel)
         {
             InitializeComponent();
+            DataContext = viewModel;
+
+            viewModel.RequestClose += (success) =>
+            {
+                DialogResult = success;
+                Close();
+            };
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)

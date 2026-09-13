@@ -2,8 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Ignis.Frontend"
+             xmlns:vmAuth="clr-namespace:Ignis.Frontend.ViewModels.Auth"
+             xmlns:views="clr-namespace:Ignis.Frontend.Views.Auth"
              >
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <DataTemplate DataType="{x:Type vmAuth:LoginFormViewModel}">
+                <views:LoginFormView/>
+            </DataTemplate>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

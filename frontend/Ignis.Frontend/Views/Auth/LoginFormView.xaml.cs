@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ignis.Frontend.ViewModels.Auth;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -21,6 +22,12 @@ namespace Ignis.Frontend.Views.Auth
         public LoginFormView()
         {
             InitializeComponent();
+        }
+
+        private void PasswordInput_PasswordChanged(string password)
+        {
+            if (DataContext is LoginFormViewModel vm)
+                vm.Password = password;
         }
     }
 }

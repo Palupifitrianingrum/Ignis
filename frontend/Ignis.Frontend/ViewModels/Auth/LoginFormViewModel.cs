@@ -18,21 +18,39 @@ namespace Ignis.Frontend.ViewModels.Auth
         [RelayCommand]
         private async Task LoginAsync()
         {
-            errorMessage = null;
-            isLoading = true;
+            ErrorMessage = null;
+            IsLoading = true;
 
             await Task.Delay(500);
 
-            if (username == "admin" && password == "admin")
+            if (Username == "admin" && Password == "admin")
             {
-                isLoading = false;
+                IsLoading = false;
                 LoginCompleted?.Invoke(true);
             }
             else
             {
-                isLoading = false;
-                errorMessage = "Username atau password salah";
+                IsLoading = false;
+                ErrorMessage = "Username atau password salah";
             }
+        }
+
+        private async Task LoginWithGoogleAsync()
+        {
+            ErrorMessage = null;
+            IsLoading = true;
+            await Task.Delay(500); // simulasi proses OAuth (nanti diganti alur OAuth beneran)
+
+            // TODO: nanti diganti dengan:
+            // 1. Buka browser/webview ke halaman consent Google
+            // 2. Terima authorization code
+            // 3. Kirim code itu ke backend buat ditukar jadi token
+            // 4. Backend balikin data user
+
+            IsLoading = false;
+
+            // Untuk sekarang, anggap selalu sukses (dummy)
+            LoginCompleted?.Invoke(true);
         }
     }
 }

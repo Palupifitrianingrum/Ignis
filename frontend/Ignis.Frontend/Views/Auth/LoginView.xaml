@@ -13,10 +13,7 @@
         AllowsTransparency="True"
         MouseDown="Window_MouseDown">
 
-    <Border CornerRadius="30"
-            Background="#EBEBEB"
-            BorderBrush="DarkGray"
-            BorderThickness="5">
+    <Border Background="#EBEBEB">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="30"/>
@@ -108,7 +105,7 @@
                            Width="50"
                            Height="50"/>
 
-                    <TextBlock Text="Nice to see you again!"
+                    <TextBlock Text="{Binding HeaderTitle}"
                                FontSize="22"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"

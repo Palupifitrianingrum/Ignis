@@ -24,6 +24,11 @@ namespace Ignis.Frontend.Views.Auth
             InitializeComponent();
         }
 
+        public LoginFormView(LoginFormViewModel viewModel) : this()
+        {
+            DataContext = viewModel;
+        }
+
         private void PasswordInput_PasswordChanged(string password)
         {
             if (DataContext is LoginFormViewModel vm)

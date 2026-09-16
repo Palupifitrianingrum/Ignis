@@ -28,5 +28,16 @@
         <shared:PrimaryButton Text="Login"
                               Command="{Binding LoginCommand}"
                               Margin="10, 0, 0, 16"/>
+
+        <Button Content="No Account yet? Sign up" Command="{Binding GoToRegisterCommand}"
+                Width="180"
+                Background="Transparent"
+                BorderThickness="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"/>
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" Margin="0,8,8,8"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center"/>
     </StackPanel>
 </UserControl>

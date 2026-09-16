@@ -10,6 +10,9 @@
             <DataTemplate DataType="{x:Type vmAuth:LoginFormViewModel}">
                 <views:LoginFormView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vmAuth:RegisterViewModel}">
+                <views:RegisterView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

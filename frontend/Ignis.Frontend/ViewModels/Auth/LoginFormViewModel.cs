@@ -14,6 +14,7 @@ namespace Ignis.Frontend.ViewModels.Auth
         [ObservableProperty] private string? errorMessage;
 
         public event Action<bool>? LoginCompleted;
+        public event Action? GoToRegisterRequested;
 
         [RelayCommand]
         private async Task LoginAsync()
@@ -35,6 +36,11 @@ namespace Ignis.Frontend.ViewModels.Auth
             }
         }
 
+        [RelayCommand]
+        private void GoToRegister()
+        {
+            GoToRegisterRequested?.Invoke();
+        }
         private async Task LoginWithGoogleAsync()
         {
             ErrorMessage = null;

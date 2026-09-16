@@ -18,7 +18,7 @@ namespace Ignis.Frontend.Views.Shared
     /// </summary>
     public partial class IconPasswordBox : UserControl
     {
-        public event Action<string> PasswordChanged;
+        public event Action<string>? PasswordChanged;
         public IconPasswordBox()
         {
             InitializeComponent();

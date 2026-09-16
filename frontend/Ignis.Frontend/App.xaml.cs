@@ -37,10 +37,12 @@ public partial class App : Application
 
         services.AddSingleton<IDialogService, DialogService>();
         services.AddTransient<LoginFormViewModel>();
+        services.AddTransient<RegisterViewModel>();
         services.AddTransient<LoginWindowViewModel>();
         services.AddTransient<MainWindowViewModel>();
 
         services.AddTransient<LoginView>();
+        services.AddTransient<RegisterView>();
         services.AddTransient<LoginFormView>();
         services.AddTransient<MainWindow>();
     }

@@ -6,7 +6,8 @@
              xmlns:local="clr-namespace:Ignis.Frontend.Views.Auth"
              xmlns:shared="clr-namespace:Ignis.Frontend.Views.Shared"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             >
     <StackPanel Margin="24">
         
         <shared:GoogleLoginButton Command="{Binding LoginWithGoogleCommand}"
@@ -29,12 +30,37 @@
                               Command="{Binding LoginCommand}"
                               Margin="10, 0, 0, 16"/>
 
-        <Button Content="No Account yet? Sign up" Command="{Binding GoToRegisterCommand}"
-                Width="180"
-                Background="Transparent"
-                BorderThickness="0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"/>
+        <StackPanel Orientation="Horizontal"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+
+            <TextBlock Text="Dont have an account?"/>
+            <Button Content="Sign up" Command="{Binding GoToRegisterCommand}"
+                    Width="50"
+                    Background="Transparent"
+                    Foreground="#0077B6"
+                    BorderThickness="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+        </StackPanel>
+
+        
 
         <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" Margin="0,8,8,8"
                    VerticalAlignment="Center"

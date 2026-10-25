@@ -1,0 +1,255 @@
+<UserControl x:Class="Ignis.Frontend.Views.Dashboard.FireRiskCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="190" d:DesignWidth="450"
+             Width="440">
+
+    <Border Background="#FFFFFF"
+            CornerRadius="16"
+            Padding="16,14">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Opacity="0.12" Color="#000000"/>
+        </Border.Effect>
+
+        <StackPanel Orientation="Vertical">
+
+            <!-- Card Header: Title & Total Node -->
+            <Grid Margin="0,0,0,10">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Bar Chart Icon -->
+                    <Viewbox Width="16" Height="16" Margin="0,0,8,0">
+                        <Canvas Width="24" Height="24">
+                            <Path Stroke="#0F172A" StrokeThickness="2.5" StrokeStartLineCap="Round"
+                                  Data="M18 20V10M12 20V4M6 20v-6"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="INDEKS BAHAYA KEBAKARAN"
+                               FontSize="11"
+                               FontWeight="ExtraBold"
+                               Foreground="#0F172A"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
+                           FontSize="11" Foreground="#64748B" FontWeight="Medium">
+                    <Run Text="Total Pantau: "/>
+                    <Run Text="{Binding TotalMonitoredNodes}" FontWeight="Bold" Foreground="#0F172A"/>
+                    <Run Text=" Node"/>
+                </TextBlock>
+            </Grid>
+
+            <!-- 4 Risk Level Columns -->
+            <UniformGrid Columns="4" Margin="0,0,0,12">
+                <!-- Rendah -->
+                <Border Background="#EDF7ED" CornerRadius="8" Padding="8,8" Margin="0,0,4,0">
+                    <StackPanel HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,2">
+                            <Ellipse Width="6" Height="6" Fill="#2E7D32" Margin="0,0,4,0"/>
+                            <TextBlock Text="Rendah" FontSize="10" FontWeight="Bold" Foreground="#2E7D32"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LowRiskCount, StringFormat='{}{0} Lokasi'}"
+                                   FontSize="11" FontWeight="SemiBold" Foreground="#386E3C"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Sedang -->
+                <Border Background="#FEF7ED" CornerRadius="8" Padding="8,8" Margin="2,0,2,0">
+                    <StackPanel HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,2">
+                            <Ellipse Width="6" Height="6" Fill="#F59E0B" Margin="0,0,4,0"/>
+                            <TextBlock Text="Sedang" FontSize="10" FontWeight="Bold" Foreground="#B45309"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding MediumRiskCount, StringFormat='{}{0} Lokasi'}"
+                                   FontSize="11" FontWeight="SemiBold" Foreground="#B45309"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tinggi -->
+                <Border Background="#FFF1EB" CornerRadius="8" Padding="8,8" Margin="2,0,2,0">
+                    <StackPanel HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,2">
+                            <Ellipse Width="6" Height="6" Fill="#EA580C" Margin="0,0,4,0"/>
+                            <TextBlock Text="Tinggi" FontSize="10" FontWeight="Bold" Foreground="#C2410C"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding HighRiskCount, StringFormat='{}{0} Lokasi'}"
+                                   FontSize="11" FontWeight="SemiBold" Foreground="#C2410C"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Kritis -->
+                <Border Background="#FEECEB" CornerRadius="8" Padding="8,8" Margin="4,0,0,0">
+                    <StackPanel HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,2">
+                            <Ellipse Width="6" Height="6" Fill="#DC2626" Margin="0,0,4,0"/>
+                            <TextBlock Text="Kritis" FontSize="10" FontWeight="Bold" Foreground="#B91C1C"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding CriticalRiskCount, StringFormat='{}{0} Lokasi'}"
+                                   FontSize="11" FontWeight="SemiBold" Foreground="#B91C1C"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Simulation Title & Interval -->
+            <Grid Margin="0,2,0,6">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Wind Icon in Orange -->
+                    <Viewbox Width="16" Height="16" Margin="0,0,8,0">
+                        <Canvas Width="24" Height="24">
+                            <Path Stroke="#F26500" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Data="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="Simulasi Angin &amp; Asap"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="#0F172A"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding SimulationRangeText}"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Foreground="#64748B"/>
+            </Grid>
+
+            <!-- Timeline Player Row: Play Button + Gradient Slider + Time Text -->
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="34"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Circular Play/Pause Button -->
+                <Button Grid.Column="0"
+                        Command="{Binding ToggleSimulationCommand}"
+                        Width="28" Height="28"
+                        Cursor="Hand"
+                        ToolTip="Mulai / Jeda Simulasi">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#0C2523"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border CornerRadius="14" Background="{TemplateBinding Background}">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#173B38"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+
+                    <Grid>
+                        <!-- Play Triangle -->
+                        <Polygon Points="0,0 0,10 9,5" Fill="#FFFFFF" Margin="2,0,0,0"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Polygon.Style>
+                                <Style TargetType="Polygon">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSimulationPlaying}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Polygon.Style>
+                        </Polygon>
+
+                        <!-- Pause Bars -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSimulationPlaying}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Rectangle Width="3" Height="9" Fill="#FFFFFF" Margin="0,0,2,0"/>
+                            <Rectangle Width="3" Height="9" Fill="#FFFFFF"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <!-- Custom Slider -->
+                <Slider Grid.Column="1"
+                        Minimum="0"
+                        Maximum="18"
+                        Value="{Binding SimulationProgress, Mode=TwoWay}"
+                        VerticalAlignment="Center"
+                        Margin="10,0,12,0"
+                        Cursor="Hand">
+                    <Slider.Style>
+                        <Style TargetType="Slider">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Slider">
+                                        <Grid>
+                                            <!-- Track with subtle gradient -->
+                                            <Border Height="6" CornerRadius="3" Background="#E2E8F0" VerticalAlignment="Center">
+                                                <Border CornerRadius="3" HorizontalAlignment="Left">
+                                                    <Border.Background>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                            <GradientStop Color="#10B981" Offset="0.0"/>
+                                                            <GradientStop Color="#F59E0B" Offset="0.5"/>
+                                                            <GradientStop Color="#F26500" Offset="1.0"/>
+                                                        </LinearGradientBrush>
+                                                    </Border.Background>
+                                                </Border>
+                                            </Border>
+                                            <Track x:Name="PART_Track">
+                                                <Track.Thumb>
+                                                    <Thumb Width="16" Height="16">
+                                                        <Thumb.Template>
+                                                            <ControlTemplate TargetType="Thumb">
+                                                                <Grid>
+                                                                    <Ellipse Width="16" Height="16" Fill="#F26500" Stroke="#FFFFFF" StrokeThickness="2.5">
+                                                                        <Ellipse.Effect>
+                                                                            <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.2"/>
+                                                                        </Ellipse.Effect>
+                                                                    </Ellipse>
+                                                                </Grid>
+                                                            </ControlTemplate>
+                                                        </Thumb.Template>
+                                                    </Thumb>
+                                                </Track.Thumb>
+                                            </Track>
+                                        </Grid>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Slider.Style>
+                </Slider>
+
+                <!-- Current Time Label -->
+                <TextBlock Grid.Column="2"
+                           Text="{Binding SimulationTimeText}"
+                           FontSize="11"
+                           FontWeight="Bold"
+                           Foreground="#64748B"
+                           VerticalAlignment="Center"/>
+            </Grid>
+
+        </StackPanel>
+    </Border>
+</UserControl>

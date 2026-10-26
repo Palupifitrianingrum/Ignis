@@ -9,20 +9,13 @@
     <!-- Top Row: IGNIS Logo + Search Bar + Filter Button -->
     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
         
-        <!-- IGNIS Logo Badge -->
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-            <Border Background="#0C2523" Width="36" Height="36" CornerRadius="10" Margin="0,0,10,0">
-                <Viewbox Width="18" Height="18">
-                    <Path Fill="#F26500"
-                          Data="M12 2C12 2 8 6.5 8 11.5C8 14 9.5 16 11 17C10.5 15.5 11 14 12 13C13 14 13.5 15.5 13 17C14.5 16 16 14 16 11.5C16 6.5 12 2 12 2M12 22C6.5 22 4 17.5 4 13C4 8.5 8.5 4.5 10 3.5C9.5 5.5 10.5 7.5 12 8.5C13.5 7.5 14.5 5.5 14 3.5C15.5 4.5 20 8.5 20 13C20 17.5 17.5 22 12 22Z"/>
-                </Viewbox>
-            </Border>
-            <TextBlock Text="IGNIS"
-                       FontSize="18"
-                       FontWeight="Black"
-                       Foreground="#0F172A"
-                       VerticalAlignment="Center"/>
-        </StackPanel>
+        <!-- IGNIS Brand Title (Logo emptied for now) -->
+        <TextBlock Text="IGNIS"
+                   FontSize="18"
+                   FontWeight="Black"
+                   Foreground="#0F172A"
+                   VerticalAlignment="Center"
+                   Margin="0,0,18,0"/>
 
         <!-- Search Bar Pill -->
         <Border Background="#FFFFFF"

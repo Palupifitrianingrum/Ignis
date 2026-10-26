@@ -109,25 +109,13 @@
                     <!-- ================= EXPANDABLE CONTENT (Opacity 0 by default, reveals on hover) ================= -->
                     <StackPanel x:Name="ExpandedContent" Opacity="0" Orientation="Vertical">
 
-                        <!-- BRANDING HEADER: Orange Rounded Square + Ignis Text -->
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,22">
-                            <!-- Orange Logo Box -->
-                            <Border Background="#F26500"
-                                    Width="36" Height="36"
-                                    CornerRadius="10"
-                                    Margin="0,0,12,0">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Opacity="0.3" Color="#F26500"/>
-                                </Border.Effect>
-                            </Border>
-
-                            <!-- Ignis Text Title -->
-                            <TextBlock Text="Ignis"
-                                       FontSize="22"
-                                       FontWeight="Bold"
-                                       Foreground="#FFFFFF"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
+                        <!-- BRANDING HEADER: Ignis Text Title (Logo emptied for now) -->
+                        <TextBlock Text="Ignis"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   Margin="4,0,0,22"/>
 
                         <!-- MENU 1: Settings (No PNG Icon) -->
                         <Button Command="{Binding OpenSettingsCommand}"

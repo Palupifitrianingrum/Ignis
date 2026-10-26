@@ -1,0 +1,70 @@
+<UserControl x:Class="IgnisAdmin.Views.KelolaHotspotPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:IgnisAdmin.Controls">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28">
+            <DockPanel Margin="0,0,0,20">
+                <Button DockPanel.Dock="Right" Content="+ Tambah Hotspot Manual" Style="{StaticResource Btn}" Click="Add_Click"/>
+                <TextBlock Style="{StaticResource H1}" Text="Kelola Hotspot"/>
+            </DockPanel>
+            <UniformGrid Columns="3" Margin="0,0,-16,20">
+                <c:StatCard x:Name="CTotal" Label="Total Hotspot" Accent="#0F3B33"/>
+                <c:StatCard x:Name="CFirms" Label="NASA FIRMS" Accent="#F28A1E"/>
+                <c:StatCard x:Name="CManual" Label="Manual Admin" Accent="#2E8B4A"/>
+            </UniformGrid>
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="300"/></Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,16,0">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Peta Hotspot"/>
+                            <c:MapView x:Name="Map" Height="320"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Daftar Hotspot"/>
+                            <DataGrid x:Name="GridHotspots" Height="360">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="80"/>
+                                    <DataGridTextColumn Header="Koordinat" Binding="{Binding CoordText}" Width="*"/>
+                                    <DataGridTextColumn Header="Sumber" Binding="{Binding SourceText}" Width="80" ElementStyle="{StaticResource SourceTag}"/>
+                                    <DataGridTextColumn Header="Confidence" Binding="{Binding ConfidenceText}" Width="90"/>
+                                    <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="80"/>
+                                    <DataGridTemplateColumn Header="Aksi" Width="190">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Content="Detail" Style="{StaticResource BtnSmall}" Click="Detail_Click"/>
+                                                    <Button Content="Edit" Margin="6,0,0,0" Style="{StaticResource BtnSmall}" Click="Edit_Click" Visibility="{Binding IsManual, Converter={StaticResource B2V}}"/>
+                                                    <Button Content="Hapus" Margin="6,0,0,0" Style="{StaticResource BtnSmall}" Click="Delete_Click" Visibility="{Binding IsManual, Converter={StaticResource B2V}}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <Border Grid.Column="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="Filter Hotspot"/>
+                        <TextBlock Style="{StaticResource Lbl}" Text="Daerah"/>
+                        <ComboBox x:Name="CmbRegion" DisplayMemberPath="Name"/>
+                        <TextBlock Style="{StaticResource Lbl}" Text="Sumber"/>
+                        <ComboBox x:Name="CmbSrc"><ComboBoxItem>Semua sumber</ComboBoxItem><ComboBoxItem>Satelit</ComboBoxItem><ComboBoxItem>Manual</ComboBoxItem></ComboBox>
+                        <TextBlock Style="{StaticResource Lbl}" Text="Status"/>
+                        <ComboBox x:Name="CmbStatus"><ComboBoxItem>Semua status</ComboBoxItem><ComboBoxItem>Aktif</ComboBoxItem><ComboBoxItem>Dipantau</ComboBoxItem><ComboBoxItem>Selesai</ComboBoxItem></ComboBox>
+                        <TextBlock x:Name="TxtCount" Style="{StaticResource Lbl}" Margin="0,0,0,12"/>
+                        <UniformGrid Columns="2">
+                            <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,0,4,0" Click="Clear_Click"/>
+                            <Button Content="Apply" Style="{StaticResource Btn}" Margin="4,0,0,0" Click="Apply_Click"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

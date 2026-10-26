@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>IgnisAdmin</RootNamespace>
+    <!-- Mapsui membawa banyak folder bahasa; hanya simpan bahasa Inggris agar output rapi -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- SDK WPF menghapus namespace ini dari ImplicitUsings, jadi ditambahkan lagi secara eksplisit -->
+    <Using Include="System.IO" />
+    <Using Include="System.Net.Http" />
+    <Using Include="System.Threading" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Peta native WPF (tanpa WebView2/Leaflet). Mapsui.Wpf otomatis membawa Mapsui, Mapsui.Tiling, dan SkiaSharp. -->
+    <PackageReference Include="Mapsui.Wpf" Version="4.1.8" />
+  </ItemGroup>
+</Project>

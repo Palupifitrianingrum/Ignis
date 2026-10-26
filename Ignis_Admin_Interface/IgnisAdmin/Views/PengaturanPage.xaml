@@ -1,0 +1,45 @@
+<UserControl x:Class="IgnisAdmin.Views.PengaturanPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28">
+            <DockPanel Margin="0,0,0,20">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Batalkan" Style="{StaticResource BtnGhost}" Click="Reset_Click"/>
+                    <Button Content="Simpan Perubahan" Style="{StaticResource Btn}" Margin="8,0,0,0" Click="Save_Click"/>
+                </StackPanel>
+                <TextBlock Style="{StaticResource H1}" Text="Pengaturan"/>
+            </DockPanel>
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" Margin="0,0,16,0" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="Sinkronisasi Data"/>
+                        <TextBlock Style="{StaticResource Lbl}" Text="Interval Pengambilan Data"/>
+                        <ComboBox x:Name="CmbInterval"><ComboBoxItem>Setiap 1 jam</ComboBoxItem><ComboBoxItem>Setiap 3 jam</ComboBoxItem><ComboBoxItem>Setiap 6 jam</ComboBoxItem><ComboBoxItem>Setiap 12 jam</ComboBoxItem></ComboBox>
+                        <TextBlock Style="{StaticResource Lbl}" Text="Endpoint NASA FIRMS"/><TextBox x:Name="TxtFirmsUrl"/>
+                        <TextBlock Style="{StaticResource Lbl}" Text="API Key NASA FIRMS (MAP_KEY)"/><PasswordBox x:Name="PwdFirms"/>
+                        <TextBlock Style="{StaticResource Lbl}" Text="Endpoint Weather API"/><TextBox x:Name="TxtWeatherUrl"/>
+                        <TextBlock Style="{StaticResource Lbl}" Text="API Key Weather"/><PasswordBox x:Name="PwdWeather"/>
+                        <TextBlock Style="{StaticResource Lbl}" Text="API Key Peta CARTO (opsional; kosong = peta Esri)"/><PasswordBox x:Name="PwdCarto"/>
+                    </StackPanel>
+                </Border>
+                <StackPanel Grid.Column="1">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Kebijakan Retry"/>
+                            <TextBlock Style="{StaticResource Lbl}" Text="Jumlah percobaan ulang"/><TextBox x:Name="TxtRetry"/>
+                            <TextBlock Style="{StaticResource Lbl}" Text="Jeda antar percobaan (menit)"/><TextBox x:Name="TxtDelay"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Notifikasi"/>
+                            <CheckBox x:Name="ChkNotif" Content="Tampilkan notifikasi saat ada hotspot baru" Margin="0,0,0,4"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

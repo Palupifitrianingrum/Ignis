@@ -1,0 +1,20 @@
+﻿IgnisAdmin
+
+
+winexe
+C#
+.cs
+C:\Users\asus\Downloads\IgnisAdmin_peta_samaan (1)\IgnisAdmin\obj\Debug\net8.0-windows\
+IgnisAdmin
+none
+false
+TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
+C:\Users\asus\Downloads\IgnisAdmin_peta_samaan (1)\IgnisAdmin\App.xaml
+142002898486
+
+19454720395
+21990269955
+Controls\InfoRow.xaml;Controls\MapView.xaml;Controls\StatCard.xaml;MainWindow.xaml;Themes\Styles.xaml;Views\DashboardPage.xaml;Views\HotspotDetailWindow.xaml;Views\HotspotFormWindow.xaml;Views\HotspotManualPage.xaml;Views\KelolaHotspotPage.xaml;Views\PengaturanPage.xaml;Views\RiwayatPage.xaml;Views\SemuaHotspotPage.xaml;Views\UsersPage.xaml;
+
+False
+

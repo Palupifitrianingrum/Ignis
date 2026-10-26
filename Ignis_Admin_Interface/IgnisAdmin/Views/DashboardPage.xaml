@@ -1,0 +1,67 @@
+<UserControl x:Class="IgnisAdmin.Views.DashboardPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:IgnisAdmin.Controls">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28">
+            <DockPanel Margin="0,0,0,20">
+                <Border DockPanel.Dock="Right" Background="White" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="16" Padding="16,8">
+                    <TextBlock Text="Admin" FontWeight="Medium"/>
+                </Border>
+                <TextBlock Style="{StaticResource H1}" Text="Dashboard Admin"/>
+            </DockPanel>
+            <UniformGrid Columns="5" Margin="0,0,-16,20">
+                <c:StatCard x:Name="CActive" Label="Hotspot Aktif" Accent="#E8531F"/>
+                <c:StatCard x:Name="CFirms" Label="Hotspot NASA FIRMS" Accent="#F28A1E"/>
+                <c:StatCard x:Name="CManual" Label="Hotspot Manual" Accent="#2E8B4A"/>
+                <c:StatCard x:Name="CPred" Label="Jumlah Prediksi" Accent="#0F3B33"/>
+                <c:StatCard x:Name="CUser" Label="Jumlah User" Accent="#0F3B33"/>
+            </UniformGrid>
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" Margin="0,0,16,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="Peta Persebaran Hotspot"/>
+                        <c:MapView x:Name="Map" Height="340"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="Status API &amp; Sinkronisasi"/>
+                        <c:InfoRow x:Name="RowFirms" Label="API NASA FIRMS"/>
+                        <c:InfoRow x:Name="RowWeather" Label="API Weather"/>
+                        <c:InfoRow x:Name="RowSync" Label="Sync Terakhir"/>
+                        <Button x:Name="BtnSync" Content="Sync Ulang" Style="{StaticResource BtnAccent}" Margin="0,8,0,0" Click="Sync_Click"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" Margin="0,0,16,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="Data Hotspot Terbaru"/>
+                        <DataGrid x:Name="GridRecent" ScrollViewer.VerticalScrollBarVisibility="Disabled" MouseDoubleClick="Recent_DoubleClick">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="90"/>
+                                <DataGridTextColumn Header="Koordinat" Binding="{Binding CoordText}" Width="*"/>
+                                <DataGridTextColumn Header="Sumber" Binding="{Binding SourceText}" Width="80" ElementStyle="{StaticResource SourceTag}"/>
+                                <DataGridTextColumn Header="Waktu" Binding="{Binding DetectedText}" Width="160"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="Riwayat Prediksi Terakhir"/>
+                        <DataGrid x:Name="GridPred" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Hotspot" Binding="{Binding HotspotId}" Width="*"/>
+                                <DataGridTextColumn Header="Risiko" Binding="{Binding RiskText}" Width="90" ElementStyle="{StaticResource RiskTag}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

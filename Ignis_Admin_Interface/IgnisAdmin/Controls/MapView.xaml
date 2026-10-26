@@ -1,0 +1,12 @@
+<UserControl x:Class="IgnisAdmin.Controls.MapView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border BorderBrush="{StaticResource Line}" BorderThickness="1" Background="#D7E6D3">
+        <!-- MapControl Mapsui ditambahkan lewat code-behind (indeks 0); teks atribusi tile di atasnya -->
+        <Grid x:Name="Root" ClipToBounds="True">
+            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#CCFFFFFF" Padding="6,2" IsHitTestVisible="False">
+                <TextBlock x:Name="Attrib" FontSize="10" Foreground="#4A615C"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

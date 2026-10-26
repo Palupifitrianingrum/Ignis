@@ -244,26 +244,35 @@ namespace Ignis.Frontend.ViewModels
             SimulationTimeText = $"{hour:D2}:{minute:D2} WIB";
         }
 
+        public event Action? ZoomInRequested;
+        public event Action? ZoomOutRequested;
+        public event Action? ResetNorthRequested;
+        public event Action? LocateMeRequested;
+
         [RelayCommand]
         private void ZoomIn()
         {
             CurrentZoomLevel = Math.Min(18.0, CurrentZoomLevel + 1.0);
+            ZoomInRequested?.Invoke();
         }
 
         [RelayCommand]
         private void ZoomOut()
         {
-            CurrentZoomLevel = Math.Max(4.0, CurrentZoomLevel - 1.0);
+            CurrentZoomLevel = Math.Max(3.0, CurrentZoomLevel - 1.0);
+            ZoomOutRequested?.Invoke();
         }
 
         [RelayCommand]
         private void ResetNorth()
         {
+            ResetNorthRequested?.Invoke();
         }
 
         [RelayCommand]
         private void LocateMe()
         {
+            LocateMeRequested?.Invoke();
         }
 
         [RelayCommand]

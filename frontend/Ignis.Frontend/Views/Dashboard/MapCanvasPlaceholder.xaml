@@ -3,69 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mapsui="clr-namespace:Mapsui.UI.Wpf;assembly=Mapsui.UI.Wpf"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1100">
 
-    <!-- Leaflet Map Container Placeholder -->
-    <Grid x:Name="MapHostContainer" Background="#D8EEDC" ClipToBounds="True">
-
-        <!-- Subtle Cartographic Coordinate Grid -->
-        <Canvas>
-            <!-- Coordinate Latitude/Longitude Grid Lines -->
-            <Line X1="0" Y1="140" X2="2000" Y2="140" Stroke="#B9DEC0" StrokeThickness="1" StrokeDashArray="6 6"/>
-            <Line X1="0" Y1="420" X2="2000" Y2="420" Stroke="#B9DEC0" StrokeThickness="1" StrokeDashArray="6 6"/>
-            <Line X1="0" Y1="640" X2="2000" Y2="640" Stroke="#B9DEC0" StrokeThickness="1" StrokeDashArray="6 6"/>
-
-            <Line X1="220" Y1="0" X2="220" Y2="1200" Stroke="#B9DEC0" StrokeThickness="1" StrokeDashArray="6 6"/>
-            <Line X1="560" Y1="0" X2="560" Y2="1200" Stroke="#B9DEC0" StrokeThickness="1" StrokeDashArray="6 6"/>
-            <Line X1="940" Y1="0" X2="940" Y2="1200" Stroke="#B9DEC0" StrokeThickness="1" StrokeDashArray="6 6"/>
-
-            <!-- Geographic Coordinate Labels (Matching Riau/Pelalawan in Hi-Fi) -->
-            <TextBlock Canvas.Left="20" Canvas.Top="60"
-                       Text="01°12'00&quot;N / 100°45'00&quot;E"
-                       FontSize="9" FontWeight="SemiBold"
-                       Foreground="#7DA683"/>
-
-            <TextBlock Canvas.Left="510" Canvas.Top="60"
-                       Text="01°12'30&quot;N / 101°30'00&quot;E"
-                       FontSize="9" FontWeight="SemiBold"
-                       Foreground="#7DA683"/>
-
-            <TextBlock Canvas.Left="880" Canvas.Top="60"
-                       Text="01°12'00&quot;N / 102°15'00&quot;E"
-                       FontSize="9" FontWeight="SemiBold"
-                       Foreground="#7DA683"/>
-
-            <TextBlock Canvas.Left="20" Canvas.Top="405"
-                       Text="00°30'00&quot;N / 100°45'00&quot;E"
-                       FontSize="9" FontWeight="SemiBold"
-                       Foreground="#7DA683"/>
-
-            <TextBlock Canvas.Left="880" Canvas.Top="405"
-                       Text="00°30'00&quot;N / 102°15'00&quot;E"
-                       FontSize="9" FontWeight="SemiBold"
-                       Foreground="#7DA683"/>
-
-            <TextBlock Canvas.Left="500" Canvas.Top="625"
-                       Text="00°15'00&quot;S / 101°30'00&quot;E"
-                       FontSize="9" FontWeight="SemiBold"
-                       Foreground="#7DA683"/>
-
-            <!-- Soft River Path (Kampar River) -->
-            <Path Stroke="#A4D2DC" StrokeThickness="8" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                  Data="M -50 520 C 180 500, 320 440, 430 420 C 520 405, 590 410, 620 460 C 660 520, 780 620, 920 680 C 1050 740, 1150 760, 1300 800"/>
-
-            <!-- River Tributary -->
-            <Path Stroke="#A4D2DC" StrokeThickness="4" StrokeLineJoin="Round"
-                  Data="M 620 460 C 670 410, 750 360, 840 330 C 920 300, 1050 280, 1200 270"/>
-
-            <!-- Soft Forest / Terrain Contours -->
-            <Path Fill="#CCE9D1" Opacity="0.5"
-                  Data="M 200 240 C 260 210, 350 230, 400 280 C 450 330, 420 400, 340 420 C 260 440, 180 390, 170 320 Z"/>
-
-            <Path Fill="#CCE9D1" Opacity="0.5"
-                  Data="M 700 180 C 780 140, 890 160, 930 220 C 970 280, 920 350, 840 360 C 760 370, 680 310, 660 240 Z"/>
-        </Canvas>
-
+    <Grid Background="#D8EEDC">
+        <!-- Native Mapsui Hardware-Accelerated Map Control -->
+        <mapsui:MapControl x:Name="MapControl" />
     </Grid>
 </UserControl>

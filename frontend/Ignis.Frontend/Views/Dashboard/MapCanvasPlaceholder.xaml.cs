@@ -2,10 +2,13 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using BruTile.Predefined;
+using BruTile.Web;
 using Mapsui;
 using Mapsui.Limiting;
 using Mapsui.Projections;
 using Mapsui.Tiling;
+using Mapsui.Tiling.Layers;
 using Ignis.Frontend.ViewModels;
 
 namespace Ignis.Frontend.Views.Dashboard;
@@ -33,19 +36,33 @@ public partial class MapCanvasPlaceholder : UserControl
     {
         var map = new Mapsui.Map();
 
-        // 1. Add standard OpenStreetMap Tile Layer
-        var tileLayer = OpenStreetMap.CreateTileLayer();
+        // 1. Add English-labeled Tile Layer (Esri World Street Map with worldwide English labels)
+        var tileLayer = CreateEnglishTileLayer();
         map.Layers.Add(tileLayer);
 
         // 2. Set Limiter so user cannot pan or zoom outside map extent into empty white space
         map.Navigator.Limiter = new ViewportLimiterKeepWithinExtent();
 
-        // 3. Limit zoom bounds: maximum zoom out resolution (level 3) so it cannot zoom out into empty white space
-        if (map.Navigator.Resolutions.Count > 4)
+        // 3. Limit zoom bounds:
+        // - Max zoom in: level 16 (street/building level)
+        // - Max zoom out: level 3 (fits screen without white margins)
+        if (map.Navigator.Resolutions.Count > 16)
+        {
+            var maxZoomInRes = map.Navigator.Resolutions[16];  // Zoom level 16
+            var maxZoomOutRes = map.Navigator.Resolutions[3];   // Zoom level 3
+            map.Navigator.OverrideZoomBounds = new MMinMax(
+                Math.Min(maxZoomInRes, maxZoomOutRes),
+                Math.Max(maxZoomInRes, maxZoomOutRes)
+            );
+        }
+        else if (map.Navigator.Resolutions.Count > 4)
         {
             var minRes = map.Navigator.Resolutions.Min();
-            var maxZoomOutRes = map.Navigator.Resolutions[3]; // Zoom level 3: slightly smaller than full world, fits screen without white border
-            map.Navigator.OverrideZoomBounds = new MMinMax(Math.Min(minRes, maxZoomOutRes), Math.Max(minRes, maxZoomOutRes));
+            var maxZoomOutRes = map.Navigator.Resolutions[3];
+            map.Navigator.OverrideZoomBounds = new MMinMax(
+                Math.Min(minRes, maxZoomOutRes),
+                Math.Max(minRes, maxZoomOutRes)
+            );
         }
 
         if (tileLayer.Extent != null)
@@ -103,5 +120,41 @@ public partial class MapCanvasPlaceholder : UserControl
     {
         var centerLonLat = SphericalMercator.FromLonLat(101.85, 0.32);
         MapControl.Map?.Navigator.CenterOn(new MPoint(centerLonLat.x, centerLonLat.y), 500);
+    }
+
+    private static TileLayer CreateEnglishTileLayer()
+    {
+        // Default: Esri World Street Map provides full worldwide labels in English (China, Japan, etc.) without requiring an API key.
+        var urlTemplate = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(0, 16),
+            urlTemplate,
+            name: "Esri World Street Map",
+            configureHttpRequestMessage: req => req.Headers.Add("User-Agent", "Ignis-WPF/1.0")
+        );
+
+        return new TileLayer(tileSource)
+        {
+            Name = "World Street Map (English)"
+        };
+    }
+
+    public static TileLayer CreateCartoVoyagerLayer(string apiKey)
+    {
+        // CARTO Voyager raster tiles with English labels worldwide.
+        // Requires a free API key from https://carto.com/basemaps/apikey to avoid the "API KEY REQUIRED" watermark.
+        var urlTemplate = $"https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}.png?key={apiKey}";
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(0, 16),
+            urlTemplate,
+            serverNodes: new[] { "a", "b", "c", "d" },
+            name: "CARTO Voyager",
+            configureHttpRequestMessage: req => req.Headers.Add("User-Agent", "Ignis-WPF/1.0")
+        );
+
+        return new TileLayer(tileSource)
+        {
+            Name = "CARTO Voyager (English)"
+        };
     }
 }

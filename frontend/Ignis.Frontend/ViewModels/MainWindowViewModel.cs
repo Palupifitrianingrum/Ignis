@@ -252,7 +252,7 @@ namespace Ignis.Frontend.ViewModels
         [RelayCommand]
         private void ZoomIn()
         {
-            CurrentZoomLevel = Math.Min(18.0, CurrentZoomLevel + 1.0);
+            CurrentZoomLevel = Math.Min(16.0, CurrentZoomLevel + 1.0);
             ZoomInRequested?.Invoke();
         }
 

@@ -5,23 +5,26 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d" 
              d:DesignHeight="780" d:DesignWidth="260"
-             Width="260"
              HorizontalAlignment="Left">
 
-    <!-- Slide-Out Animation on MouseEnter / MouseLeave -->
-    <UserControl.RenderTransform>
-        <TranslateTransform x:Name="SidebarTransform" X="-246"/>
-    </UserControl.RenderTransform>
-
+    <!-- Expand & Fade Animations on MouseEnter / MouseLeave -->
     <UserControl.Triggers>
-        <!-- Hover in: slide out smoothly -->
+        <!-- Hover in: expand width to 260 and fade in menu content -->
         <EventTrigger RoutedEvent="MouseEnter">
             <BeginStoryboard>
                 <Storyboard>
-                    <DoubleAnimation Storyboard.TargetName="SidebarTransform"
-                                     Storyboard.TargetProperty="X"
-                                     To="0"
+                    <DoubleAnimation Storyboard.TargetName="SidebarContainer"
+                                     Storyboard.TargetProperty="Width"
+                                     To="260"
                                      Duration="0:0:0.22">
+                        <DoubleAnimation.EasingFunction>
+                            <CubicEase EasingMode="EaseOut"/>
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="ExpandedContent"
+                                     Storyboard.TargetProperty="Opacity"
+                                     To="1.0"
+                                     Duration="0:0:0.20">
                         <DoubleAnimation.EasingFunction>
                             <CubicEase EasingMode="EaseOut"/>
                         </DoubleAnimation.EasingFunction>
@@ -30,13 +33,17 @@
             </BeginStoryboard>
         </EventTrigger>
 
-        <!-- Hover out: tuck into left wall -->
+        <!-- Hover out: contract width to 60 and hide everything except expand icon -->
         <EventTrigger RoutedEvent="MouseLeave">
             <BeginStoryboard>
                 <Storyboard>
-                    <DoubleAnimation Storyboard.TargetName="SidebarTransform"
-                                     Storyboard.TargetProperty="X"
-                                     To="-246"
+                    <DoubleAnimation Storyboard.TargetName="ExpandedContent"
+                                     Storyboard.TargetProperty="Opacity"
+                                     To="0.0"
+                                     Duration="0:0:0.12"/>
+                    <DoubleAnimation Storyboard.TargetName="SidebarContainer"
+                                     Storyboard.TargetProperty="Width"
+                                     To="60"
                                      Duration="0:0:0.25">
                         <DoubleAnimation.EasingFunction>
                             <CubicEase EasingMode="EaseIn"/>
@@ -47,33 +54,64 @@
         </EventTrigger>
     </UserControl.Triggers>
 
-    <Grid>
-        <!-- Main Sidebar Panel -->
-        <Border Background="#0C2523"
-                CornerRadius="0,14,14,0"
-                BorderBrush="#153C38"
-                BorderThickness="0,0,1,0">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="0" Opacity="0.25" Color="#000000"/>
-            </Border.Effect>
+    <!-- Main Sidebar Container: Clean Rectangle (Width 60 when collapsed, 260 when hovered) -->
+    <Border x:Name="SidebarContainer"
+            Width="60"
+            Background="#0C2523"
+            BorderBrush="#153C38"
+            BorderThickness="0,0,1,0"
+            ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="0" Opacity="0.25" Color="#000000"/>
+        </Border.Effect>
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <!-- Content Area (246px) -->
-                    <ColumnDefinition Width="246"/>
-                    <!-- Peek / Grab Strip Area (14px) -->
-                    <ColumnDefinition Width="14"/>
-                </Grid.ColumnDefinitions>
+        <!-- Fixed Width Inner Container (260px) so contents don't wrap/jump while expanding -->
+        <Grid Width="260" HorizontalAlignment="Left">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Vertical" Margin="12,14,14,20">
 
-                <!-- ================= LEFT CONTENT AREA ================= -->
-                <ScrollViewer Grid.Column="0"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Orientation="Vertical" Margin="16,20,12,20">
+                    <!-- TOP ROW: ONLY the Expand Icon is visible in resting 60px mode -->
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <!-- 36px column: Perfectly centered inside the 60px collapsed bar ((60-36)/2 = 12px margin) -->
+                            <ColumnDefinition Width="36"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                        <!-- Top Brand Header: Orange Logo + Ignis Text -->
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,24">
-                            <!-- Orange Rounded Square Logo -->
+                        <!-- Expand Icon: ALWAYS VISIBLE -->
+                        <Border Grid.Column="0"
+                                Width="36" Height="36"
+                                CornerRadius="8"
+                                Background="#133633"
+                                Cursor="Hand"
+                                ToolTip="Expand / Perlebar Sidebar">
+                            <Viewbox Width="18" Height="18">
+                                <Canvas Width="24" Height="24">
+                                    <!-- Sidebar Expand Icon: Rectangle with left rail & arrow pointing right -->
+                                    <Path Stroke="#8EA7A3" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Data="M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM9 4v16M14 9l3 3-3 3"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Border>
+
+                        <!-- Header Label (Visible only on hover) -->
+                        <TextBlock Grid.Column="1"
+                                   Opacity="{Binding Opacity, ElementName=ExpandedContent}"
+                                   Text="Sidebar Menu"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Foreground="#7A9C97"
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,0,0"/>
+                    </Grid>
+
+                    <!-- ================= EXPANDABLE CONTENT (Opacity 0 by default, reveals on hover) ================= -->
+                    <StackPanel x:Name="ExpandedContent" Opacity="0" Orientation="Vertical">
+
+                        <!-- BRANDING HEADER: Orange Rounded Square + Ignis Text -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,22">
+                            <!-- Orange Logo Box -->
                             <Border Background="#F26500"
                                     Width="36" Height="36"
                                     CornerRadius="10"
@@ -83,6 +121,7 @@
                                 </Border.Effect>
                             </Border>
 
+                            <!-- Ignis Text Title -->
                             <TextBlock Text="Ignis"
                                        FontSize="22"
                                        FontWeight="Bold"
@@ -90,7 +129,7 @@
                                        VerticalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Menu Button 1: Settings (No PNG icon) -->
+                        <!-- MENU 1: Settings (No PNG Icon) -->
                         <Button Command="{Binding OpenSettingsCommand}"
                                 Height="42" Margin="0,0,0,10"
                                 Cursor="Hand">
@@ -129,185 +168,172 @@
                             </Button.Style>
                         </Button>
 
-                        <!-- Menu Button 2: Saved (No PNG icon) -->
+                        <!-- MENU 2: Saved (No PNG Icon) -->
                         <Button Command="{Binding OpenSavedCommand}"
                                 Height="42" Margin="0,0,0,26"
                                 Cursor="Hand">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="#133633"/>
-                                    <Setter Property="BorderThickness" Value="0"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border x:Name="border" CornerRadius="10" Background="{TemplateBinding Background}" Padding="14,0">
-                                                    <Grid>
-                                                        <TextBlock Text="Saved"
-                                                                   FontSize="13"
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="#FFFFFF"
-                                                                   VerticalAlignment="Center"
-                                                                   HorizontalAlignment="Left"/>
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#133633"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="border" CornerRadius="10" Background="{TemplateBinding Background}" Padding="14,0">
+                                                <Grid>
+                                                    <TextBlock Text="Saved"
+                                                               FontSize="13"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#FFFFFF"
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Left"/>
 
-                                                        <!-- 4 Lokasi Badge -->
-                                                        <Border Background="#092220"
-                                                                CornerRadius="9"
-                                                                Padding="8,3"
-                                                                HorizontalAlignment="Right"
-                                                                VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding SavedLocationsCount, StringFormat='{}{0} Lokasi'}"
-                                                                       FontSize="11"
-                                                                       FontWeight="Bold"
-                                                                       Foreground="#FBBF24"/>
-                                                        </Border>
-                                                    </Grid>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="border" Property="Background" Value="#1A4541"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </Button.Style>
-                        </Button>
+                                                    <!-- 4 Lokasi Badge -->
+                                                    <Border Background="#092220"
+                                                            CornerRadius="9"
+                                                            Padding="8,3"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding SavedLocationsCount, StringFormat='{}{0} Lokasi'}"
+                                                                   FontSize="11"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="#FBBF24"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#1A4541"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
 
-                        <!-- Section Header: RECENT + Count -->
-                        <Grid Margin="2,0,2,14">
-                            <TextBlock Text="RECENT"
+                    <!-- Section Header: RECENT + Count -->
+                    <Grid Margin="2,0,2,14">
+                        <TextBlock Text="RECENT"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="#658A85"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Left"/>
+
+                        <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   FontSize="11" Foreground="#476A65">
+                            <Run Text="{Binding RecentLocations.Count, Mode=OneWay}"/>
+                            <Run Text=" entri"/>
+                        </TextBlock>
+                    </Grid>
+
+                    <!-- Recent Locations List -->
+                    <ItemsControl ItemsSource="{Binding RecentLocations}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,12" Padding="4" Background="Transparent" CornerRadius="6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="20"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Vector Location Pin Icon -->
+                                        <Viewbox Grid.Column="0" Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,2,0,0">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Fill="{Binding PinColorHex}"
+                                                      Data="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                                            </Canvas>
+                                        </Viewbox>
+
+                                        <!-- Title & Subtitle -->
+                                        <StackPanel Grid.Column="1" Orientation="Vertical" Margin="4,0,4,0">
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#FFFFFF"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Subtitle}"
+                                                       FontSize="10"
+                                                       Foreground="#7A9C97"
+                                                       Margin="0,2,0,0"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+
+                                        <!-- Delete (✕) Button -->
+                                        <Button Grid.Column="2"
+                                                Command="{Binding DataContext.RemoveRecentLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Width="18" Height="18"
+                                                Cursor="Hand"
+                                                VerticalAlignment="Top"
+                                                HorizontalAlignment="Right"
+                                                ToolTip="Hapus dari riwayat">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Button.Style>
+                                            <TextBlock Text="✕" FontSize="10" FontWeight="Bold" Foreground="#4E706B"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Clear All History Button -->
+                    <Button Command="{Binding ClearAllRecentCommand}"
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Left"
+                            Cursor="Hand"
+                            ToolTip="Hapus seluruh riwayat pencarian">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="Transparent" Padding="2,4">
+                                                <ContentPresenter/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Trash Can Vector Icon -->
+                            <Viewbox Width="12" Height="12" Margin="0,0,8,0">
+                                <Canvas Width="24" Height="24">
+                                    <Path Stroke="#658A85" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Data="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Hapus Semua Riwayat"
                                        FontSize="11"
-                                       FontWeight="Bold"
-                                       Foreground="#658A85"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Left"/>
-
-                            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" Foreground="#476A65">
-                                <Run Text="{Binding RecentLocations.Count, Mode=OneWay}"/>
-                                <Run Text=" entri"/>
-                            </TextBlock>
-                        </Grid>
-
-                        <!-- Recent Locations List -->
-                        <ItemsControl ItemsSource="{Binding RecentLocations}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="0,0,0,12" Padding="4" Background="Transparent" CornerRadius="6">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="22"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="20"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <!-- Vector Location Pin Icon -->
-                                            <Viewbox Grid.Column="0" Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,2,0,0">
-                                                <Canvas Width="24" Height="24">
-                                                    <Path Fill="{Binding PinColorHex}"
-                                                          Data="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
-                                                </Canvas>
-                                            </Viewbox>
-
-                                            <!-- Title & Subtitle -->
-                                            <StackPanel Grid.Column="1" Orientation="Vertical" Margin="4,0,4,0">
-                                                <TextBlock Text="{Binding Title}"
-                                                           FontSize="12"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="#FFFFFF"
-                                                           TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding Subtitle}"
-                                                           FontSize="10"
-                                                           Foreground="#7A9C97"
-                                                           Margin="0,2,0,0"
-                                                           TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-
-                                            <!-- Delete (✕) Button -->
-                                            <Button Grid.Column="2"
-                                                    Command="{Binding DataContext.RemoveRecentLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}"
-                                                    Width="18" Height="18"
-                                                    Cursor="Hand"
-                                                    VerticalAlignment="Top"
-                                                    HorizontalAlignment="Right"
-                                                    ToolTip="Hapus dari riwayat">
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Setter Property="Background" Value="Transparent"/>
-                                                        <Setter Property="BorderThickness" Value="0"/>
-                                                        <Setter Property="Template">
-                                                            <Setter.Value>
-                                                                <ControlTemplate TargetType="Button">
-                                                                    <Border Background="{TemplateBinding Background}">
-                                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                    </Border>
-                                                                </ControlTemplate>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </Style>
-                                                </Button.Style>
-                                                <TextBlock Text="✕" FontSize="10" FontWeight="Bold" Foreground="#4E706B"/>
-                                            </Button>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <!-- Clear All History Button -->
-                        <Button Command="{Binding ClearAllRecentCommand}"
-                                Margin="0,8,0,0"
-                                HorizontalAlignment="Left"
-                                Cursor="Hand"
-                                ToolTip="Hapus seluruh riwayat pencarian">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="BorderThickness" Value="0"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="Transparent" Padding="2,4">
-                                                    <ContentPresenter/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </Button.Style>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <!-- Trash Can Vector Icon -->
-                                <Viewbox Width="12" Height="12" Margin="0,0,8,0">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Stroke="#658A85" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                              Data="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                    </Canvas>
-                                </Viewbox>
-                                <TextBlock Text="Hapus Semua Riwayat"
-                                           FontSize="11"
-                                           FontWeight="Medium"
-                                           Foreground="#7A9C97"/>
-                            </StackPanel>
-                        </Button>
+                                       FontWeight="Medium"
+                                       Foreground="#7A9C97"/>
+                        </StackPanel>
+                    </Button>
 
                     </StackPanel>
-                </ScrollViewer>
-
-                <!-- ================= RIGHT GRAB / PEEK STRIP (14px) ================= -->
-                <!-- Always visible on the left wall when tucked -->
-                <Grid Grid.Column="1" Background="Transparent" Cursor="Hand">
-                    <!-- Subtle Vertical Accent Pip -->
-                    <Border Width="3" Height="36"
-                            CornerRadius="1.5"
-                            Background="#F26500"
-                            Opacity="0.75"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"/>
-                </Grid>
-
-            </Grid>
-        </Border>
-    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
 </UserControl>

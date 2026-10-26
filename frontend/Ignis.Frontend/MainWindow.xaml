@@ -15,14 +15,11 @@
     <!-- Unified Dashboard Grid with Full Canvas and Overlay Drawer Sidebar -->
     <Grid Background="#D8EEDC">
 
-        <!-- Layer 1: Map Canvas (Leaflet Placeholder Canvas) -->
+        <!-- Layer 1: Map Canvas (Mapsui Native Map) -->
         <dashboard:MapCanvasPlaceholder/>
 
-        <!-- Layer 2: Sample Hotspot Markers & Hazard Cluster Overlay -->
-        <dashboard:HotspotBadgesOverlay/>
-
         <!-- Layer 3: Interactive Floating UI Overlays -->
-        <Grid Margin="32,16,20,20">
+        <Grid Margin="76,16,20,20">
             <Grid.RowDefinitions>
                 <!-- Top Floating Area -->
                 <RowDefinition Height="Auto"/>
@@ -106,15 +103,18 @@
                                            HorizontalAlignment="Right"/>
                             </StackPanel>
 
-                            <!-- User Avatar Photo with circular clip -->
+                            <!-- Plain Avatar Circle -->
                             <Border Width="38" Height="38" CornerRadius="19"
-                                    BorderBrush="#FFFFFF" BorderThickness="2"
-                                    ClipToBounds="True">
+                                    Background="#E2E8F0"
+                                    BorderBrush="#FFFFFF" BorderThickness="2">
                                 <Border.Effect>
-                                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Direction="270" Opacity="0.15" Color="#000000"/>
+                                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Direction="270" Opacity="0.1" Color="#000000"/>
                                 </Border.Effect>
-                                <Image Source="/Resources/Icons/captain_miller.jpg"
-                                       Stretch="UniformToFill"/>
+                                <Viewbox Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Fill="#64748B" Data="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </Canvas>
+                                </Viewbox>
                             </Border>
                         </StackPanel>
                     </Button>
@@ -123,21 +123,10 @@
             </Grid>
 
             <!-- BOTTOM FLOATING WIDGETS -->
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <!-- Bottom-Left Fire Index & Wind Simulation Card -->
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <!-- Bottom-Right Floating Map Tool Controls -->
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Bottom-Left: Fire Risk Index Card -->
-                <dashboard:FireRiskCard Grid.Column="0" VerticalAlignment="Bottom"/>
-
-                <!-- Bottom-Right: Map Control Buttons Stack -->
-                <dashboard:MapControlsOverlay Grid.Column="2" VerticalAlignment="Bottom"/>
-            </Grid>
+            <!-- Bottom-Right: Map Control Buttons Stack -->
+            <dashboard:MapControlsOverlay Grid.Row="2"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Bottom"/>
 
         </Grid>
 

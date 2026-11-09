@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System;
 
 namespace Ignis.Frontend.Navigation
 {
     public interface IDialogService
     {
         bool? ShowLoginDialog();
+        void ShowAdminWindow();
     }
 }

@@ -1,0 +1,118 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Palet dari logo Ignis -->
+    <SolidColorBrush x:Key="Dark" Color="#0F3B33"/>
+    <SolidColorBrush x:Key="Orange" Color="#F28A1E"/>
+    <SolidColorBrush x:Key="Red" Color="#E8531F"/>
+    <SolidColorBrush x:Key="Green" Color="#2E8B4A"/>
+    <SolidColorBrush x:Key="Bg" Color="#F6F4EF"/>
+    <SolidColorBrush x:Key="Line" Color="#E3DFD3"/>
+    <SolidColorBrush x:Key="Ink" Color="#12332E"/>
+    <SolidColorBrush x:Key="Muted" Color="#4A615C"/>
+    <BooleanToVisibilityConverter x:Key="B2V"/>
+
+    <Style x:Key="H1" TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="FontSize" Value="26"/><Setter Property="FontWeight" Value="Bold"/></Style>
+    <Style x:Key="H2" TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="FontSize" Value="16"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,0,0,12"/></Style>
+    <Style x:Key="Lbl" TargetType="TextBlock"><Setter Property="FontSize" Value="13"/><Setter Property="Foreground" Value="{StaticResource Muted}"/></Style>
+    <Style x:Key="Num" TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="FontSize" Value="30"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Margin" Value="0,4,0,0"/></Style>
+    <Style x:Key="Card" TargetType="Border">
+        <Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+        <Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="14"/><Setter Property="Padding" Value="18"/>
+    </Style>
+
+    <Style x:Key="Btn" TargetType="Button">
+        <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="{StaticResource Dark}"/>
+        <Setter Property="BorderBrush" Value="Transparent"/><Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="18,9"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.88"/></Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter TargetName="b" Property="Opacity" Value="0.4"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="BtnAccent" TargetType="Button" BasedOn="{StaticResource Btn}">
+        <Setter Property="Background" Value="{StaticResource Orange}"/><Setter Property="Foreground" Value="{StaticResource Ink}"/>
+    </Style>
+    <Style x:Key="BtnGhost" TargetType="Button" BasedOn="{StaticResource Btn}">
+        <Setter Property="Background" Value="White"/><Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="BorderBrush" Value="#C9C4B5"/>
+    </Style>
+    <Style x:Key="BtnDanger" TargetType="Button" BasedOn="{StaticResource Btn}"><Setter Property="Background" Value="#7A1F00"/></Style>
+    <Style x:Key="BtnSmall" TargetType="Button" BasedOn="{StaticResource BtnGhost}">
+        <Setter Property="Padding" Value="10,4"/><Setter Property="FontSize" Value="12"/>
+    </Style>
+
+    <Style x:Key="Nav" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="#F6F4EF"/><Setter Property="Margin" Value="0,2"/><Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="b" Background="Transparent" CornerRadius="10" Padding="14,10">
+                        <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="#1C5247"/></Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{StaticResource Orange}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="TextBox"><Setter Property="Padding" Value="8"/><Setter Property="BorderBrush" Value="#C9C4B5"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="Margin" Value="0,4,0,10"/></Style>
+    <Style TargetType="PasswordBox"><Setter Property="Padding" Value="8"/><Setter Property="BorderBrush" Value="#C9C4B5"/><Setter Property="Margin" Value="0,4,0,10"/></Style>
+    <Style TargetType="ComboBox"><Setter Property="Padding" Value="8,6"/><Setter Property="Margin" Value="0,4,0,10"/></Style>
+    <Style TargetType="DatePicker"><Setter Property="Margin" Value="0,4,0,10"/><Setter Property="Padding" Value="4"/></Style>
+
+    <Style TargetType="DataGrid">
+        <Setter Property="AutoGenerateColumns" Value="False"/><Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="CanUserAddRows" Value="False"/><Setter Property="CanUserResizeRows" Value="False"/>
+        <Setter Property="HeadersVisibility" Value="Column"/><Setter Property="GridLinesVisibility" Value="Horizontal"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="#EFECE3"/><Setter Property="Background" Value="White"/>
+        <Setter Property="RowBackground" Value="White"/><Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="RowHeight" Value="42"/><Setter Property="SelectionMode" Value="Single"/>
+        <Setter Property="SelectionUnit" Value="FullRow"/><Setter Property="FontSize" Value="13"/>
+    </Style>
+    <Style TargetType="DataGridColumnHeader">
+        <Setter Property="Background" Value="White"/><Setter Property="Foreground" Value="{StaticResource Muted}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Padding" Value="8,10"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+    </Style>
+    <Style TargetType="DataGridCell">
+        <Setter Property="BorderThickness" Value="0"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border Background="{TemplateBinding Background}" Padding="8,0"><ContentPresenter VerticalAlignment="Center"/></Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#F6F4EF"/><Setter Property="Foreground" Value="#12332E"/></Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="SourceTag" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#1F6B3A"/>
+        <Style.Triggers><DataTrigger Binding="{Binding SourceText}" Value="Manual"><Setter Property="Foreground" Value="#9A4A00"/></DataTrigger></Style.Triggers>
+    </Style>
+    <Style x:Key="RiskTag" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#1F6B3A"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding RiskText}" Value="MEDIUM"><Setter Property="Foreground" Value="#9A5A00"/></DataTrigger>
+            <DataTrigger Binding="{Binding RiskText}" Value="HIGH"><Setter Property="Foreground" Value="#C2410C"/></DataTrigger>
+            <DataTrigger Binding="{Binding RiskText}" Value="CRITICAL"><Setter Property="Foreground" Value="#7A1F00"/></DataTrigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>

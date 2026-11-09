@@ -145,6 +145,13 @@ namespace Ignis.Frontend.ViewModels
         [RelayCommand]
         private void OpenSettings()
         {
+            _dialogService.ShowAdminWindow();
+        }
+
+        [RelayCommand]
+        private void OpenAdmin()
+        {
+            _dialogService.ShowAdminWindow();
         }
 
         [RelayCommand]

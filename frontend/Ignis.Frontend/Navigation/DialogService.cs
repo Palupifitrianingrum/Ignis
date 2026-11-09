@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System;
 using Microsoft.Extensions.DependencyInjection;
+using Ignis.Frontend.Views.Admin;
 using Ignis.Frontend.Views.Auth;
 
 namespace Ignis.Frontend.Navigation
@@ -19,6 +18,12 @@ namespace Ignis.Frontend.Navigation
         {
             var loginWindow = _serviceProvider.GetRequiredService<LoginView>();
             return loginWindow.ShowDialog();
+        }
+
+        public void ShowAdminWindow()
+        {
+            var adminWindow = _serviceProvider.GetRequiredService<AdminMainWindow>();
+            adminWindow.Show();
         }
     }
 }

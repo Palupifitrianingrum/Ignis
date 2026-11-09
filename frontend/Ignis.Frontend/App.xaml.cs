@@ -1,11 +1,11 @@
-﻿using System.Configuration;
-using System.Data;
-using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Windows;
-using Ignis.Frontend.Views.Auth;
+using Microsoft.Extensions.DependencyInjection;
 using Ignis.Frontend.Navigation;
-using Ignis.Frontend.ViewModels.Auth;
 using Ignis.Frontend.ViewModels;
+using Ignis.Frontend.ViewModels.Auth;
+using Ignis.Frontend.Views.Admin;
+using Ignis.Frontend.Views.Auth;
 
 namespace Ignis.Frontend;
 
@@ -45,6 +45,6 @@ public partial class App : Application
         services.AddTransient<RegisterView>();
         services.AddTransient<LoginFormView>();
         services.AddTransient<MainWindow>();
+        services.AddTransient<AdminMainWindow>();
     }
 }
-

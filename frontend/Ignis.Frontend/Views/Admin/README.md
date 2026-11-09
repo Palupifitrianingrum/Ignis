@@ -21,3 +21,4 @@ Dokumentasi implementasi modul **Dashboard Admin** yang telah diintegrasikan ke 
 | **Manajemen Pengguna** | Daftar pengguna, filter peran/status, aksi ubah status aktif/non-aktif, log aktivitas pengguna. |
 | **Riwayat Prediksi** | Filter risiko dan tanggal, detail hotspot terkait, serta fitur **Ekspor CSV**. |
 | **Pengaturan** | Konfigurasi interval sync, endpoint API, API Key FIRMS / Weather / CARTO, kebijakan retry, dan notifikasi. Disimpan otomatis ke `%AppData%\IgnisAdmin\settings.json`. |
+

@@ -37,12 +37,6 @@ namespace Ignis.Frontend.ViewModels
 
         // Header & User info
         [ObservableProperty]
-        private string userName = "Captain R. Miller";
-
-        [ObservableProperty]
-        private string userRole = "Incident Commander";
-
-        [ObservableProperty]
         private string emergencyStatus = "Siaga Darurat Riau";
 
         [ObservableProperty]

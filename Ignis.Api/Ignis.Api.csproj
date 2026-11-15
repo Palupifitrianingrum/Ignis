@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Ignis.Api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ignis.Core\Ignis.Core.csproj" />
+    <ProjectReference Include="..\Ignis.Infrastructure\Ignis.Infrastructure.csproj" />
+    <ProjectReference Include="..\Ignis.Integrations\Ignis.Integrations.csproj" />
+  </ItemGroup>
+
+</Project>

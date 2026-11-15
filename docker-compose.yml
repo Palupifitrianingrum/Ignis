@@ -1,0 +1,26 @@
+# Database lokal untuk pengembangan, dijalankan dari terminal:
+#   docker compose up -d        # start
+#   docker compose down         # stop (data tetap, ada di volume)
+# Isi IGNIS_DB_PASSWORD di .env (salin dari .env.example). Tabel dibuat otomatis oleh Ignis.Api saat start
+# (Storage:Provider=Postgres, Storage:AutoCreate=true); skrip setara ada di database/schema.sql.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ignis-db
+    environment:
+      POSTGRES_DB: ignis
+      POSTGRES_USER: ignis
+      POSTGRES_PASSWORD: ${IGNIS_DB_PASSWORD:?isi IGNIS_DB_PASSWORD di .env}
+    ports:
+      - "127.0.0.1:5432:5432"   # hanya bisa diakses dari laptop ini
+    volumes:
+      - ignis-pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ignis -d ignis"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  ignis-pgdata:

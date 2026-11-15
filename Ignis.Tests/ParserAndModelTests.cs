@@ -109,3 +109,27 @@ public class WeatherSimulationTests
         Assert.Equal("Simulasi", w.Condition);
     }
 }
+
+public class FireSpreadSimulatorTests
+{
+    [Fact]
+    public void Simulate_IsDeterministic_AndAreaDoesNotShrink()
+    {
+        var h = new ManualHotspot(0.32, 101.85, 85, DateTime.Now, "Petugas");
+        h.AssignId("HS-0001");
+        var w = new WeatherData { Id = "WX-0001", Temperature = 34, Humidity = 40, WindSpeed = 8, WindDirection = 270, Precipitation = 0 };
+
+        var sim = new FireSpreadSimulator();
+        var frames1 = sim.Simulate(h, w, 6).ToList();
+        var frames2 = sim.Simulate(h, w, 6).ToList();
+
+        Assert.Equal(7, frames1.Count);
+        for (int i = 0; i < frames1.Count; i++)
+        {
+            Assert.Equal(frames1[i].AreaHa, frames2[i].AreaHa);
+            Assert.Equal(frames1[i].BurningCells.Count, frames2[i].BurningCells.Count);
+            if (i > 0) Assert.True(frames1[i].AreaHa >= frames1[i - 1].AreaHa);
+        }
+        Assert.True(frames1[^1].BurningCells.Count > 1);
+    }
+}

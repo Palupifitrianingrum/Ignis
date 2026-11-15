@@ -237,19 +237,41 @@
                                             </Canvas>
                                         </Viewbox>
 
-                                        <!-- Title & Subtitle -->
-                                        <StackPanel Grid.Column="1" Orientation="Vertical" Margin="4,0,4,0">
-                                            <TextBlock Text="{Binding Title}"
-                                                       FontSize="12"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="#FFFFFF"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding Subtitle}"
-                                                       FontSize="10"
-                                                       Foreground="#7A9C97"
-                                                       Margin="0,2,0,0"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                        </StackPanel>
+                                        <!-- Title & Subtitle (Clickable to focus map) -->
+                                        <Button Grid.Column="1"
+                                                Command="{Binding DataContext.SelectRecentLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Cursor="Hand"
+                                                Margin="4,0,4,0"
+                                                HorizontalContentAlignment="Left">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}">
+                                                                    <ContentPresenter/>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Button.Style>
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock Text="{Binding Title}"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#FFFFFF"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Subtitle}"
+                                                           FontSize="10"
+                                                           Foreground="#7A9C97"
+                                                           Margin="0,2,0,0"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Button>
 
                                         <!-- Delete (✕) Button -->
                                         <Button Grid.Column="2"
@@ -317,6 +339,40 @@
                                        FontWeight="Medium"
                                        Foreground="#7A9C97"/>
                         </StackPanel>
+                    </Button>
+
+                    <!-- Logout Button (Visible when logged in) -->
+                    <Button Command="{Binding LogoutCommand}"
+                            Visibility="{Binding IsLoggedIn, Converter={StaticResource B2V}}"
+                            Height="38"
+                            Margin="0,18,0,0"
+                            Cursor="Hand"
+                            ToolTip="Keluar dari sesi saat ini">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#7A1F00"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="border" CornerRadius="10" Background="{TemplateBinding Background}" Padding="14,0">
+                                                <TextBlock Text="Logout"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#FFFFFF"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Opacity" Value="0.88"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
                     </Button>
 
                     </StackPanel>

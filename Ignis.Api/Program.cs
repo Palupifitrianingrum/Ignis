@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using Ignis.Api.Data;
 using Ignis.Api.Endpoints;
@@ -69,6 +69,7 @@ builder.Services.AddAuthorizationBuilder()
 // ---- Layanan aplikasi ----
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<FwiPredictionModel>();
+builder.Services.AddSingleton<FireSpreadSimulator>();
 builder.Services.AddHttpClient<FirmsClient>(c => c.Timeout = TimeSpan.FromSeconds(30));
 builder.Services.AddHttpClient<WeatherClient>(c => c.Timeout = TimeSpan.FromSeconds(30));
 builder.Services.AddHttpClient<GoogleOAuthClient>(c => c.Timeout = TimeSpan.FromSeconds(30));

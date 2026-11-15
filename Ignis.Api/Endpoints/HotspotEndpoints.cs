@@ -44,6 +44,12 @@ public static class HotspotEndpoints
         admin.MapPost("/hotspots/{id}/predictions", async (string id, HotspotService hs, PredictionService svc) =>
             await hs.GetByIdAsync(id) is { } h ? Results.Ok((await svc.PredictAsync(h)).ToDto()) : Results.NotFound());
 
-        // TODO(backend): GET /api/hotspots/{id}/simulation?hours=N -> IEnumerable<SimulationFrame> (lihat Services/FireSpreadSimulator.cs).
+        api.MapGet("/hotspots/{id}/simulation", async (string id, int? hours, HotspotService hs, PredictionService ps, FireSpreadSimulator sim) =>
+        {
+            if (await hs.GetByIdAsync(id) is not { } h) return Results.NotFound();
+            var weather = await ps.GetWeatherAsync(h);
+            var frames = sim.Simulate(h, weather, Math.Clamp(hours ?? 6, 1, 24)).Select(f => f.ToDto()).ToList();
+            return Results.Ok(frames);
+        });
     }
 }

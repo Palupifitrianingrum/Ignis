@@ -67,9 +67,12 @@
                     <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              Background="Transparent"
                              BorderThickness="0"
+                             Padding="0"
+                             Margin="0"
                              FontSize="12"
                              Foreground="#0F172A"
-                             VerticalAlignment="Center"/>
+                             VerticalAlignment="Stretch"
+                             VerticalContentAlignment="Center"/>
                 </Grid>
 
                 <!-- Shortcut Chip (Ctrl+K) -->

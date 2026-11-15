@@ -69,8 +69,9 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- User Profile (Captain R. Miller) -->
-                    <Button Command="{Binding OpenLoginCommand}"
+                    <!-- User Profile -->
+                    <Button x:Name="ProfileButton"
+                            Command="{Binding ToggleProfileMenuCommand}"
                             Cursor="Hand"
                             ToolTip="Profil Pengguna &amp; Autentikasi"
                             VerticalAlignment="Center">
@@ -89,38 +90,205 @@
                                 </Setter>
                             </Style>
                         </Button.Style>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <!-- User Name and Role text -->
-                            <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="0,0,10,0">
-                                <TextBlock Text="{Binding UserName}"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           Foreground="#0F172A"
-                                           HorizontalAlignment="Right"/>
-                                <TextBlock Text="{Binding UserRole}"
-                                           FontSize="10"
-                                           Foreground="#64748B"
-                                           HorizontalAlignment="Right"/>
-                            </StackPanel>
-
-                            <!-- Plain Avatar Circle -->
-                            <Border Width="38" Height="38" CornerRadius="19"
-                                    Background="#E2E8F0"
-                                    BorderBrush="#FFFFFF" BorderThickness="2">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Direction="270" Opacity="0.1" Color="#000000"/>
-                                </Border.Effect>
-                                <Viewbox Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Canvas Width="24" Height="24">
-                                        <Path Fill="#64748B" Data="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                                    </Canvas>
-                                </Viewbox>
-                            </Border>
-                        </StackPanel>
+                        <!-- Plain Avatar Circle -->
+                        <Border Width="38" Height="38" CornerRadius="19"
+                                Background="#E2E8F0"
+                                BorderBrush="#FFFFFF" BorderThickness="2">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="1" Direction="270" Opacity="0.1" Color="#000000"/>
+                            </Border.Effect>
+                            <Viewbox Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path Fill="#64748B" Data="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Border>
                     </Button>
 
                 </StackPanel>
             </Grid>
+
+            <!-- PROFILE DROPDOWN CARD (Appears below profile icon when logged in & clicked) -->
+            <Border Grid.Row="1"
+                    Panel.ZIndex="90"
+                    Visibility="{Binding IsProfileMenuOpen, Converter={StaticResource B2V}}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,8,0,0"
+                    Width="250"
+                    Background="#F1F5F9"
+                    BorderBrush="#CBD5E1"
+                    BorderThickness="1.5"
+                    CornerRadius="22"
+                    Padding="16">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Opacity="0.16" Color="#000000"/>
+                </Border.Effect>
+
+                <StackPanel Orientation="Vertical">
+                    <!-- Inner Grouped Box: Profile Pic + Account | Add Account | Log Out -->
+                    <Border Background="#FFFFFF"
+                            BorderBrush="#CBD5E1"
+                            BorderThickness="1.2"
+                            CornerRadius="14"
+                            ClipToBounds="True">
+                        <StackPanel Orientation="Vertical">
+
+                            <!-- Row 1: Profile Pic | Account -->
+                            <Grid Height="58">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="64"/>
+                                    <ColumnDefinition Width="1.2"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Profile Pic Circle -->
+                                <Border Grid.Column="0"
+                                        Width="38" Height="38"
+                                        CornerRadius="19"
+                                        Background="#E2E8F0"
+                                        BorderBrush="#94A3B8"
+                                        BorderThickness="1.2"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                    <Viewbox Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Fill="#64748B" Data="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Border>
+
+                                <!-- Vertical Divider -->
+                                <Rectangle Grid.Column="1" Fill="#CBD5E1" VerticalAlignment="Stretch"/>
+
+                                <!-- Account Label & User Name -->
+                                <StackPanel Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Center"
+                                            Margin="8,0">
+                                    <TextBlock Text="Account"
+                                               FontSize="15"
+                                               FontWeight="SemiBold"
+                                               Foreground="#0F172A"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding UserName}"
+                                               FontSize="10"
+                                               Foreground="#64748B"
+                                               HorizontalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Horizontal Divider -->
+                            <Rectangle Height="1.2" Fill="#CBD5E1"/>
+
+                            <!-- Row 2: Add Account -->
+                            <Button Command="{Binding AddAccountCommand}"
+                                    Height="44"
+                                    Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="rowBorder" Background="{TemplateBinding Background}">
+                                                        <TextBlock Text="Add Account"
+                                                                   FontSize="14"
+                                                                   FontWeight="Medium"
+                                                                   Foreground="#0F172A"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="rowBorder" Property="Background" Value="#F1F5F9"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
+                            <!-- Horizontal Divider -->
+                            <Rectangle Height="1.2" Fill="#CBD5E1"/>
+
+                            <!-- Row 3: Log Out -->
+                            <Button Command="{Binding LogoutCommand}"
+                                    Height="44"
+                                    Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="rowBorder" Background="{TemplateBinding Background}" CornerRadius="0,0,13,13">
+                                                        <TextBlock x:Name="rowText"
+                                                                   Text="Log Out"
+                                                                   FontSize="14"
+                                                                   FontWeight="Medium"
+                                                                   Foreground="#0F172A"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="rowBorder" Property="Background" Value="#FEE2E2"/>
+                                                            <Setter TargetName="rowText" Property="Foreground" Value="#DC2626"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Bottom Standalone Settings Button -->
+                    <Button Command="{Binding OpenSettingsFromMenuCommand}"
+                            Height="42"
+                            Margin="0,12,0,0"
+                            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#FFFFFF"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="settingsBorder"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="#CBD5E1"
+                                                    BorderThickness="1.2"
+                                                    CornerRadius="14">
+                                                <TextBlock Text="Settings"
+                                                           FontSize="14"
+                                                           FontWeight="Medium"
+                                                           Foreground="#0F172A"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="settingsBorder" Property="Background" Value="#E2E8F0"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Border>
 
             <!-- BOTTOM FLOATING WIDGETS -->
             <!-- Bottom-Right: Map Control Buttons Stack -->

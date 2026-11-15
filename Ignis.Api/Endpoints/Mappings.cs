@@ -1,4 +1,5 @@
 using Ignis.Api.Domain;
+using Ignis.Api.Services;
 using Ignis.Shared;
 
 namespace Ignis.Api.Endpoints;
@@ -23,6 +24,11 @@ public static class Mappings
 
     public static PredictionDto ToDto(this Prediction p) => new(
         p.Id, p.HotspotId, p.WeatherId, p.Direction, p.SpeedKmH, p.AreaHa, p.Hours, p.Risk, p.CreatedAt);
+
+    public static SimulationFrameDto ToDto(this SimulationFrame f) => new(
+        f.HourOffset,
+        f.BurningCells.Select(c => new CoordinateDto(c.Latitude, c.Longitude)).ToList(),
+        f.AreaHa);
 
     public static UserDto ToDto(this User u) => new(u.Id, u.Name, u.Email, u.Role, u.IsActive, u.CreatedAt);
 }

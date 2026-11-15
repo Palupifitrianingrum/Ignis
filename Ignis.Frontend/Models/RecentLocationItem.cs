@@ -8,4 +8,6 @@ public class RecentLocationItem
     public string Title { get; set; } = string.Empty;
     public string Subtitle { get; set; } = string.Empty;
     public string PinColorHex { get; set; } = "#F97316";
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
 }

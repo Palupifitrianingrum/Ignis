@@ -61,6 +61,13 @@ public sealed record PredictionDto(
     RiskLevel Risk,
     DateTime CreatedAt);
 
+public sealed record CoordinateDto(double Latitude, double Longitude);
+
+public sealed record SimulationFrameDto(
+    int HourOffset,
+    IReadOnlyList<CoordinateDto> BurningCells,
+    double AreaHa);
+
 // ---------- Pengguna & sinkronisasi ----------
 
 /// <summary>Pengguna untuk klien — sengaja tanpa PasswordHash.</summary>

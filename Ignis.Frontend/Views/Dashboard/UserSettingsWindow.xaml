@@ -1,0 +1,57 @@
+<Window x:Class="Ignis.Frontend.Views.Dashboard.UserSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Pengaturan Aplikasi — Ignis"
+        Width="520" Height="440"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Poppins, Segoe UI"
+        Background="{StaticResource Bg}">
+    <Grid Margin="28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,18">
+            <TextBlock Style="{StaticResource H1}" FontSize="22" Text="Pengaturan Aplikasi"/>
+            <TextBlock Style="{StaticResource Lbl}" Text="Preferensi tampilan peta, notifikasi, dan koneksi server lokal." Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Content Cards -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="Peta &amp; Koneksi"/>
+                        <TextBlock Style="{StaticResource Lbl}" Text="Alamat Server API (Ignis.Api)"/>
+                        <TextBox x:Name="TxtApiUrl" ToolTip="Contoh: http://localhost:5000/"/>
+
+                        <TextBlock Style="{StaticResource Lbl}" Text="API Key Peta CARTO (opsional; kosongkan untuk peta standar Esri)"/>
+                        <PasswordBox x:Name="PwdCarto"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="Notifikasi"/>
+                        <CheckBox x:Name="ChkNotif"
+                                  Content="Tampilkan notifikasi saat titik api (hotspot) baru terdeteksi"
+                                  Foreground="{StaticResource Ink}"
+                                  FontSize="13"
+                                  Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+            <Button Content="Batal" Style="{StaticResource BtnGhost}" Click="Cancel_Click"/>
+            <Button Content="Simpan" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="Save_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
+

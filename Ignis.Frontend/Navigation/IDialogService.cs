@@ -6,6 +6,7 @@ namespace Ignis.Frontend.Navigation
     {
         bool? ShowLoginDialog();
         void ShowAdminWindow();
+        void ShowSettingsWindow();
         void ShowMessage(string message);
     }
 }

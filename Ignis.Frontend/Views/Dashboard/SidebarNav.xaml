@@ -117,6 +117,46 @@
                                    VerticalAlignment="Center"
                                    Margin="4,0,0,22"/>
 
+                        <!-- MENU 0: Admin Dashboard (Visible only for Admin role) -->
+                        <Button Command="{Binding OpenAdminCommand}"
+                                Visibility="{Binding IsAdmin, Converter={StaticResource B2V}}"
+                                Height="42" Margin="0,0,0,10"
+                                Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#F28A1E"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="border" CornerRadius="10" Background="{TemplateBinding Background}" Padding="14,0">
+                                                    <Grid>
+                                                        <TextBlock Text="Admin Dashboard"
+                                                                   FontSize="13"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="#12332E"
+                                                                   VerticalAlignment="Center"
+                                                                   HorizontalAlignment="Left"/>
+                                                        <TextBlock Text="›"
+                                                                   FontSize="18"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="#12332E"
+                                                                   VerticalAlignment="Center"
+                                                                   HorizontalAlignment="Right"/>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
                         <!-- MENU 1: Settings (No PNG Icon) -->
                         <Button Command="{Binding OpenSettingsCommand}"
                                 Height="42" Margin="0,0,0,10"

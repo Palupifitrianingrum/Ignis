@@ -1,7 +1,9 @@
 using System;
+using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Ignis.Frontend.Views.Admin;
 using Ignis.Frontend.Views.Auth;
+using Ignis.Frontend.Views.Dashboard;
 
 namespace Ignis.Frontend.Navigation
 {
@@ -26,7 +28,17 @@ namespace Ignis.Frontend.Navigation
             adminWindow.Show();
         }
 
+        public void ShowSettingsWindow()
+        {
+            var settingsWindow = _serviceProvider.GetRequiredService<UserSettingsWindow>();
+            if (Application.Current?.MainWindow is { IsVisible: true } main)
+            {
+                settingsWindow.Owner = main;
+            }
+            settingsWindow.ShowDialog();
+        }
+
         public void ShowMessage(string message) =>
-            System.Windows.MessageBox.Show(message, "Ignis", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            MessageBox.Show(message, "Ignis", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }

@@ -9,6 +9,7 @@ using Ignis.Frontend.ViewModels;
 using Ignis.Frontend.ViewModels.Auth;
 using Ignis.Frontend.Views.Admin;
 using Ignis.Frontend.Views.Auth;
+using Ignis.Frontend.Views.Dashboard;
 
 namespace Ignis.Frontend;
 
@@ -65,5 +66,6 @@ public partial class App : Application
         services.AddTransient<LoginFormView>();
         services.AddTransient<MainWindow>();
         services.AddTransient<AdminMainWindow>();
+        services.AddTransient<UserSettingsWindow>();
     }
 }

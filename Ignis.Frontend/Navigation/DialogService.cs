@@ -25,5 +25,8 @@ namespace Ignis.Frontend.Navigation
             var adminWindow = _serviceProvider.GetRequiredService<AdminMainWindow>();
             adminWindow.Show();
         }
+
+        public void ShowMessage(string message) =>
+            System.Windows.MessageBox.Show(message, "Ignis", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
     }
 }

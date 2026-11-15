@@ -1,10 +1,7 @@
 using System;
+using System.Net.Http;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
-using Ignis.Core.Abstractions;
-using Ignis.Core.InMemory;
-using Ignis.Core.Services;
-using Ignis.Integrations;
 using Ignis.Frontend.Navigation;
 using Ignis.Frontend.Services.Admin;
 using Ignis.Frontend.Services.Backend;
@@ -43,40 +40,18 @@ public partial class App : Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        // ---- Ignis.Core: penyimpanan (mode demo/in-memory) ----
-        // TODO(backend): ganti dengan implementasi yang memanggil Ignis.Api (HTTP) setelah server siap.
-        services.AddSingleton<IHotspotRepository>(_ => new InMemoryHotspotRepository(DemoData.Hotspots()));
-        services.AddSingleton<IPredictionRepository>(_ => new InMemoryPredictionRepository(DemoData.Predictions()));
-        services.AddSingleton<IUserRepository>(_ => new InMemoryUserRepository(DemoData.Users()));
-        services.AddSingleton<IActivityLog>(_ => new InMemoryActivityLog(DemoData.Activities()));
-
-        // ---- Integrasi eksternal (transisi: desktop masih memanggil NASA FIRMS/OpenWeather langsung) ----
-        // TODO(backend): pindahkan sinkronisasi ke server (BackgroundService di Ignis.Api).
+        // ---- Pengaturan lokal + klien API ----
+        // IgnisApiClient harus singleton: ia menyimpan sesi login (token JWT) yang dipakai semua halaman.
         services.AddSingleton<AppSettings>(_ => AppSettings.Load());
-        services.AddSingleton<ISettingsProvider>(sp => sp.GetRequiredService<AppSettings>());
-        services.AddHttpClient<IFirmsClient, FirmsClient>(c => c.Timeout = TimeSpan.FromSeconds(30));
-        services.AddHttpClient<OpenWeatherClient>(c => c.Timeout = TimeSpan.FromSeconds(30));
-        services.AddSingleton<IWeatherProvider>(sp =>
-            new FallbackWeatherProvider(sp.GetRequiredService<OpenWeatherClient>(), new SimulatedWeatherProvider()));
-
-        // ---- Ignis.Core: service (use case) ----
-        services.AddSingleton<IPredictionModel, FwiPredictionModel>();
-        services.AddSingleton<HotspotService>();
-        services.AddSingleton<PredictionService>();
-        services.AddSingleton<UserService>();
-        services.AddSingleton<HotspotSyncService>();
-
-        // ---- Backend untuk halaman admin: API (PostgreSQL) atau demo, sesuai AppSettings.BackendMode ----
-        services.AddSingleton<LocalAdminBackend>();
-        services.AddHttpClient<ApiAdminBackend>((sp, c) =>
+        services.AddSingleton<IgnisApiClient>(sp =>
         {
-            var url = sp.GetRequiredService<AppSettings>().ApiBaseUrl.Trim();
-            c.BaseAddress = new Uri(url.EndsWith('/') ? url : url + "/");
-            c.Timeout = TimeSpan.FromSeconds(60);   // sync/prediksi bisa lebih lama dari panggilan biasa
+            var url = (Environment.GetEnvironmentVariable("IGNIS_API_URL") ?? sp.GetRequiredService<AppSettings>().ApiBaseUrl).Trim();
+            return new IgnisApiClient(new HttpClient
+            {
+                BaseAddress = new Uri(url.EndsWith('/') ? url : url + "/"),
+                Timeout = TimeSpan.FromSeconds(60)   // sync/prediksi bisa lebih lama dari panggilan biasa
+            });
         });
-        services.AddSingleton<IAdminBackend>(sp => sp.GetRequiredService<AppSettings>().UseApi
-            ? sp.GetRequiredService<ApiAdminBackend>()
-            : sp.GetRequiredService<LocalAdminBackend>());
         services.AddSingleton<AdminWorkspace>();
 
         services.AddSingleton<IDialogService, DialogService>();

@@ -1,8 +1,17 @@
 # Database Ignis (PostgreSQL)
 
 Skema mengikuti ERD proyek. Skrip lengkap: [database/schema.sql](../database/schema.sql) (dihasilkan dari
-[AppDbContext](../Ignis.Infrastructure/Persistence/AppDbContext.cs)). Tabel dibuat otomatis oleh `Ignis.Api`
+[AppDbContext](../Ignis.Api/Data/AppDbContext.cs)). Tabel dibuat otomatis oleh `Ignis.Api`
 saat start bila `Storage:Provider=Postgres`.
+
+## Id berformat `HS-1000`
+
+Id hotspot (`HS-`), cuaca (`WX-`), prediksi (`PR-`), dan pengguna (`U-`) dibuat server dari **sequence PostgreSQL**
+(`ignis_hotspot_seq`, `ignis_weather_seq`, `ignis_prediction_seq`, `ignis_user_seq`) lewat `AppDbContext.NextIdAsync`.
+Sequence menjamin dua permintaan bersamaan tidak pernah mendapat nomor yang sama (cara lama "ambil angka terbesar + 1" bisa bentrok).
+Nomor dimulai dari 1000 karena nomor di bawahnya dipakai data demo (`HS-0142`, dst.). Sequence dibuat otomatis saat API start
+(`CREATE SEQUENCE IF NOT EXISTS`) dan juga ada di akhir `database/schema.sql`. Nomor yang sudah dipakai tidak dipakai ulang,
+jadi bisa ada lubang bila penyimpanan gagal setelah nomor diambil. Itu wajar untuk sequence.
 
 ## ERD (hasil implementasi)
 

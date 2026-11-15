@@ -1,19 +1,19 @@
 # Fitur Tugas OOP: Manajemen Hotspot
 
 Fitur: **admin menambah, mengubah, dan menghapus hotspot manual**, sedangkan hotspot satelit (NASA FIRMS) hanya dibaca.
-Seluruh data disimpan di PostgreSQL. Alurnya: `WPF (form admin)` → HTTP → `Ignis.Api` → `HotspotService` → entity `Hotspot` → `EfHotspotRepository` → PostgreSQL.
+Seluruh data disimpan di PostgreSQL. Alurnya: `WPF (form admin)` → HTTP → `Ignis.Api` → `HotspotService` → entity `Hotspot` → `AppDbContext` (EF Core) → PostgreSQL. Endpoint tambah/ubah/hapus hanya untuk akun Admin (token JWT).
 
-Method utama: `HotspotService.AddManualAsync` ([Ignis.Core/Services/HotspotService.cs](../Ignis.Core/Services/HotspotService.cs)).
+Method utama: `HotspotService.AddManualAsync` ([Ignis.Api/Services/HotspotService.cs](../Ignis.Api/Services/HotspotService.cs)).
 
 ## Di mana tiga konsep itu diterapkan
 
 | Konsep | Penerapan | Berkas |
 |---|---|---|
-| **Inheritance** | `Hotspot` (abstrak) diturunkan menjadi `SatelliteHotspot` dan `ManualHotspot`. `User` (abstrak) diturunkan menjadi `Admin` dan `RegisteredUser`. Sama seperti ERD (tabel anak berbagi PK/FK dengan tabel induk). | [Hotspot.cs](../Ignis.Core/Entities/Hotspot.cs), [User.cs](../Ignis.Core/Entities/User.cs) |
-| **Encapsulation** | Semua properti `Hotspot`/`User` bersetter privat. Nilai berubah hanya lewat konstruktor dan method (`UpdateReport`, `ChangeStatus`, `AssignId`, `Activate`/`Deactivate`) yang memvalidasi invarian (lat/lon, confidence 0–100, pelapor wajib, Id hanya sekali). `UpdateReport` bersifat atomik: input tidak valid tidak mengubah apa pun. | [Hotspot.cs](../Ignis.Core/Entities/Hotspot.cs), [DomainException.cs](../Ignis.Core/Common/DomainException.cs) |
-| **Polymorphism** | `Hotspot.IsEditable` dan `Hotspot.GetDetails()` abstrak, tiap subclass punya perilaku sendiri. `HotspotService.DeleteAsync` cukup memanggil `existing.IsEditable` tanpa `if` per jenis. `User.CanManageHotspots` juga polimorfik. | [HotspotService.cs](../Ignis.Core/Services/HotspotService.cs) |
+| **Inheritance** | `Hotspot` (abstrak) diturunkan menjadi `SatelliteHotspot` dan `ManualHotspot`. `User` (abstrak) diturunkan menjadi `Admin` dan `RegisteredUser`. Sama seperti ERD (tabel anak berbagi PK/FK dengan tabel induk). | [Hotspot.cs](../Ignis.Api/Domain/Hotspot.cs), [User.cs](../Ignis.Api/Domain/User.cs) |
+| **Encapsulation** | Semua properti `Hotspot`/`User` bersetter privat. Nilai berubah hanya lewat konstruktor dan method (`UpdateReport`, `ChangeStatus`, `AssignId`, `Activate`/`Deactivate`) yang memvalidasi invarian (lat/lon, confidence 0–100, pelapor wajib, Id hanya sekali). `UpdateReport` bersifat atomik: input tidak valid tidak mengubah apa pun. | [Hotspot.cs](../Ignis.Api/Domain/Hotspot.cs), [DomainException.cs](../Ignis.Api/Domain/DomainException.cs) |
+| **Polymorphism** | `Hotspot.IsEditable` dan `Hotspot.GetDetails()` abstrak, tiap subclass punya perilaku sendiri. `HotspotService.DeleteAsync` cukup memanggil `existing.IsEditable` tanpa `if` per jenis. `User.CanManageHotspots` juga polimorfik. | [HotspotService.cs](../Ignis.Api/Services/HotspotService.cs) |
 
-Bukti perilakunya ada di unit test: [HotspotOopTests](../Ignis.Core.Tests/CoreLogicTests.cs) (`dotnet test Ignis.Core.Tests`).
+Bukti perilakunya ada di unit test: [HotspotOopTests](../Ignis.Tests/DomainTests.cs) (`dotnet test Ignis.Tests`).
 
 ## Alur "tambah hotspot manual"
 
@@ -25,7 +25,7 @@ sequenceDiagram
     participant API as Ignis.Api
     participant SVC as HotspotService
     participant ENT as ManualHotspot (entity)
-    participant REPO as EfHotspotRepository
+    participant REPO as AppDbContext (EF Core)
     participant DB as PostgreSQL
 
     Admin->>FE: isi form, klik Simpan
@@ -39,7 +39,7 @@ sequenceDiagram
         API-->>FE: HTTP 400 {error}
         FE-->>Admin: pesan error
     else valid
-        SVC->>REPO: AddAsync(hotspot)
+        SVC->>REPO: NextIdAsync + Add + SaveChanges
         REPO->>DB: INSERT hotspots + manual_hotspots
         DB-->>REPO: ok
         REPO-->>SVC: hotspot (Id HS-xxxx)
@@ -92,22 +92,14 @@ classDiagram
         +DeleteAsync(id) bool
         +ImportSatelliteAsync(hotspots) int
     }
-    class IHotspotRepository {
-        <<interface>>
-        +GetAllAsync()
-        +AddAsync(hotspot)
-        +UpdateAsync(hotspot)
-        +DeleteAsync(id)
+    class AppDbContext {
+        +NextIdAsync(kind) string
     }
-    class EfHotspotRepository
-    class InMemoryHotspotRepository
     class DomainException
 
     Hotspot <|-- SatelliteHotspot
     Hotspot <|-- ManualHotspot
-    HotspotService --> IHotspotRepository
-    IHotspotRepository <|.. EfHotspotRepository
-    IHotspotRepository <|.. InMemoryHotspotRepository
+    HotspotService --> AppDbContext
     HotspotService ..> Hotspot : memperlakukan semua sebagai Hotspot
     Hotspot ..> DomainException : melempar bila tidak valid
 ```
@@ -115,5 +107,5 @@ classDiagram
 ## Mencoba
 
 Lihat bagian "Menjalankan" di [README](../README.md). Singkatnya: nyalakan PostgreSQL, jalankan `Ignis.Api` dengan
-`Storage__Provider=Postgres`, jalankan `Ignis.Frontend`, login `admin` / `admin`, buka **Kelola Hotspot** lalu **Tambah Hotspot**.
+`Storage__Provider=Postgres`, jalankan `Ignis.Frontend`, login `admin@ignis.example` / `Ignis@123` (akun demo), buka **Kelola Hotspot** lalu **Tambah Hotspot**.
 Hasilnya bisa dicek langsung di database: `SELECT * FROM hotspots h JOIN manual_hotspots m USING (hotspot_id);`

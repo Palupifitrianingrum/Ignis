@@ -5,12 +5,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Ignis.Frontend.Models;
 using Ignis.Frontend.Navigation;
+using Ignis.Frontend.Services.Backend;
 
 namespace Ignis.Frontend.ViewModels
 {
     public partial class MainWindowViewModel : ObservableObject
     {
         private readonly IDialogService _dialogService;
+        private readonly IgnisApiClient _api;
         private readonly DispatcherTimer _simulationTimer;
 
         [ObservableProperty]
@@ -96,9 +98,11 @@ namespace Ignis.Frontend.ViewModels
         [ObservableProperty]
         private bool areHotspotsVisible = true;
 
-        public MainWindowViewModel(IDialogService dialogService)
+        public MainWindowViewModel(IDialogService dialogService, IgnisApiClient api)
         {
             _dialogService = dialogService;
+            _api = api;
+            _api.SessionChanged += ApplySession;   // login, logout, atau token kedaluwarsa
 
             _simulationTimer = new DispatcherTimer
             {
@@ -143,15 +147,34 @@ namespace Ignis.Frontend.ViewModels
         }
 
         [RelayCommand]
-        private void OpenSettings()
+        private void OpenSettings() => OpenAdminWindow();
+
+        [RelayCommand]
+        private void OpenAdmin() => OpenAdminWindow();
+
+        /// <summary>Panel admin hanya untuk akun Admin: belum login → tampilkan login dulu; bukan admin → tolak dengan pesan.</summary>
+        private void OpenAdminWindow()
         {
+            if (!_api.IsLoggedIn) OpenLogin();
+            if (!_api.IsLoggedIn) return;   // login dibatalkan
+
+            if (!_api.IsAdmin)
+            {
+                _dialogService.ShowMessage("Panel admin hanya dapat dibuka oleh akun Admin.");
+                return;
+            }
             _dialogService.ShowAdminWindow();
         }
 
-        [RelayCommand]
-        private void OpenAdmin()
+        /// <summary>Samakan tampilan header dengan sesi login saat ini.</summary>
+        private void ApplySession()
         {
-            _dialogService.ShowAdminWindow();
+            IsLoggedIn = _api.IsLoggedIn;
+            if (_api.CurrentUser is { } user)
+            {
+                UserName = user.Name;
+                UserRole = user.Role.ToString();
+            }
         }
 
         [RelayCommand]

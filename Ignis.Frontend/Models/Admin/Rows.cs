@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
-using Ignis.Core.Contracts;
-using Ignis.Core.Enums;
+using Ignis.Shared;
 
 namespace Ignis.Frontend.Models.Admin;
 
@@ -73,14 +72,14 @@ public sealed class PredictionRow
 
 public sealed class UserRow
 {
-    public Ignis.Core.Contracts.UserDto Dto { get; }
-    public UserRow(Ignis.Core.Contracts.UserDto dto) => Dto = dto;
+    public UserDto Dto { get; }
+    public UserRow(UserDto dto) => Dto = dto;
 
     public string Id => Dto.Id;
     public string Name => Dto.Name;
     public string Email => Dto.Email;
     public bool IsActive => Dto.IsActive;
-    public bool IsAdmin => Dto.Role == Ignis.Core.Enums.Role.Admin;
+    public bool IsAdmin => Dto.Role == Ignis.Shared.Role.Admin;
 
     /// <summary>Label peran untuk tampilan ("Admin" | "Terdaftar").</summary>
     public string Role => IsAdmin ? "Admin" : "Terdaftar";

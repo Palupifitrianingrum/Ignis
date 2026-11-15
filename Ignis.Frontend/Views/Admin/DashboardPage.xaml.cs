@@ -2,7 +2,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Ignis.Core.Enums;
+using Ignis.Shared;
 using Ignis.Frontend.Models.Admin;
 using Ignis.Frontend.Services.Admin;
 

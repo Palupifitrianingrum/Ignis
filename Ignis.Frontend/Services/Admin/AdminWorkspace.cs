@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Ignis.Core.Contracts;
-using Ignis.Core.Enums;
-using Ignis.Core.Services;
-using Ignis.Core.ValueObjects;
+using Ignis.Shared;
 using Ignis.Frontend.Models.Admin;
 using Ignis.Frontend.Services.Backend;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,17 +11,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Ignis.Frontend.Services.Admin;
 
 /// <summary>
-/// Sisi-klien untuk modul admin: cache data dari <see cref="IAdminBackend"/> (API/PostgreSQL atau demo),
-/// dibungkus jadi baris tampilan, plus event perubahan untuk UI. Tanpa logika bisnis — itu ada di Ignis.Core
-/// (dijalankan di server pada mode API).
+/// Sisi-klien untuk modul admin: cache data dari <see cref="IgnisApiClient"/> (Ignis.Api),
+/// dibungkus jadi baris tampilan, plus event perubahan untuk UI. Tanpa logika bisnis — itu ada di Ignis.Api.
 /// </summary>
 public sealed class AdminWorkspace
 {
     public static AdminWorkspace Current => App.Services.GetRequiredService<AdminWorkspace>();
 
-    private readonly IAdminBackend _backend;
+    private readonly IgnisApiClient _backend;
 
-    public AdminWorkspace(IAdminBackend backend, AppSettings settings)
+    public AdminWorkspace(IgnisApiClient backend, AppSettings settings)
     {
         _backend = backend;
         Settings = settings;
@@ -120,18 +116,28 @@ public sealed class AdminWorkspace
 
     public async Task<string> SyncAsync()
     {
-        var progress = new Progress<SyncProgress>(p =>
-        {
-            if (p.Source == "firms") FirmsStatus = StatusText(p.State);
-            Changed?.Invoke();
-        });
+        var previousFirms = FirmsStatus;
+        FirmsStatus = StatusText(ConnectionState.Syncing);
+        Changed?.Invoke();
 
-        var result = await _backend.SyncAsync(progress);
+        SyncResult result;
+        try { result = await _backend.SyncAsync(); }
+        catch
+        {
+            FirmsStatus = previousFirms;   // gagal menghubungi server: jangan tinggalkan status "Menyinkronkan..."
+            Changed?.Invoke();
+            throw;
+        }
+
         if (result.Firms != ConnectionState.Unknown || result.Weather != ConnectionState.Unknown)
         {
             FirmsStatus = StatusText(result.Firms);
             WeatherStatus = StatusText(result.Weather);
             LastSync = result.FinishedAt;
+        }
+        else
+        {
+            FirmsStatus = previousFirms;   // "sedang berjalan": status lama dipertahankan
         }
         if (result.NewHotspots > 0) NewHotspots?.Invoke(result.NewHotspots);
         await ReloadAsync();

@@ -1,8 +1,7 @@
 using System;
 using System.Globalization;
 using System.Windows;
-using Ignis.Core.Contracts;
-using Ignis.Core.Enums;
+using Ignis.Shared;
 using Ignis.Frontend.Models.Admin;
 using Ignis.Frontend.Services.Admin;
 

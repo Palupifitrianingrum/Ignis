@@ -1,7 +1,8 @@
 -- =====================================================================
 -- Skema database Ignis (PostgreSQL) — mengikuti ERD proyek.
--- Dihasilkan dari Ignis.Infrastructure/Persistence/AppDbContext.cs
--- (db.Database.GenerateCreateScript()). Jangan diedit tangan: ubah model lalu hasilkan ulang.
+-- Dihasilkan dari Ignis.Api/Data/AppDbContext.cs
+-- (db.Database.GenerateCreateScript()), lalu ditambah sequence Id di bagian paling bawah.
+-- Bila model berubah, hasilkan ulang tabelnya dan pertahankan bagian sequence.
 --
 -- Pemetaan ERD -> tabel:
 --   USER              -> users                (nama "user" kata cadangan di PostgreSQL)
@@ -151,3 +152,13 @@ CREATE INDEX "IX_predictions_hotspot_id_created_at" ON predictions (hotspot_id, 
 CREATE INDEX "IX_predictions_weather_id" ON predictions (weather_id);
 CREATE UNIQUE INDEX "IX_users_email" ON users (email);
 CREATE INDEX "IX_weather_data_hotspot_id_timestamp" ON weather_data (hotspot_id, timestamp);
+
+-- ---------------------------------------------------------------------
+-- Sequence untuk Id berformat "PREFIX-0001" (HS-, WX-, PR-, U-).
+-- Id dibuat server dengan nextval() sehingga dua penulis bersamaan tidak pernah mendapat nomor yang sama.
+-- Mulai dari 1000: nomor di bawahnya dipakai data demo. Ignis.Api juga membuatnya (IF NOT EXISTS) saat start.
+-- ---------------------------------------------------------------------
+CREATE SEQUENCE IF NOT EXISTS ignis_hotspot_seq START 1000;
+CREATE SEQUENCE IF NOT EXISTS ignis_weather_seq START 1000;
+CREATE SEQUENCE IF NOT EXISTS ignis_prediction_seq START 1000;
+CREATE SEQUENCE IF NOT EXISTS ignis_user_seq START 1000;

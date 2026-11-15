@@ -1,10 +1,10 @@
-# Class Diagram Ignis (struktur baru)
+# Class Diagram Ignis
 
-Dua diagram: **domain** (entity dan relasinya) dan **layanan** (service, interface, implementasi per proyek).
+Tiga diagram: **domain** (entity dan relasinya), **server** (service, endpoint, database, integrasi di `Ignis.Api`), dan **desktop** (`Ignis.Frontend`).
 Salin blok `mermaid` ke https://mermaid.live atau pratinjau Markdown yang mendukung Mermaid.
-Diagram basis data ada di [database.md](database.md); fitur untuk tugas OOP di [oop-feature.md](oop-feature.md).
+Diagram basis data ada di [database.md](database.md); fitur untuk tugas OOP di [oop-feature.md](oop-feature.md); peta lokasi file di [README](../README.md#peta-kode-class-itu-ada-di-mana).
 
-## 1. Domain (`Ignis.Core`)
+## 1. Domain (`Ignis.Api/Domain`, enum di `Ignis.Shared`)
 
 ```mermaid
 classDiagram
@@ -43,11 +43,6 @@ classDiagram
         <<value object>>
         +double Magnitude
         +double DirectionDegrees
-    }
-    class Region {
-        <<value object>>
-        +string Name
-        +Contains(lat, lon) bool
     }
 
     class User {
@@ -169,55 +164,39 @@ classDiagram
 ```
 
 Catatan: `User` dan `Hotspot` abstrak dengan setter privat (enkapsulasi); `CanManageHotspots`, `IsEditable`, dan `GetDetails()`
-dioverride tiap subclass (polimorfisme). `login()/logout()` ada di `IAuthService`; operasi tambah/ubah/hapus hotspot ada di `HotspotService`.
+dioverride tiap subclass (polimorfisme). Login/registrasi ada di `AuthService`; operasi tambah/ubah/hapus hotspot ada di `HotspotService`.
 
-## 2. Layanan, interface, dan implementasi
+## 2. Server (`Ignis.Api`)
+
+Service memakai `AppDbContext` langsung (EF Core sudah berperan sebagai repository), tanpa lapisan interface tambahan.
 
 ```mermaid
 classDiagram
     direction LR
 
-    namespace Core_Abstractions {
-        class IHotspotRepository {
-            <<interface>>
-        }
-        class IWeatherRepository {
-            <<interface>>
-        }
-        class IPredictionRepository {
-            <<interface>>
-        }
-        class IUserRepository {
-            <<interface>>
-        }
-        class IActivityLog {
-            <<interface>>
-        }
-        class IFirmsClient {
-            <<interface>>
-        }
-        class IWeatherProvider {
-            <<interface>>
-        }
-        class ISettingsProvider {
-            <<interface>>
-        }
-        class IPredictionModel {
-            <<interface>>
-        }
-        class IFireSpreadSimulator {
-            <<interface>>
-        }
-        class IAuthService {
-            <<interface>>
-        }
-        class INotifier {
-            <<interface>>
-        }
+    namespace Endpoints {
+        class AuthEndpoints
+        class HotspotEndpoints
+        class AdminEndpoints
+        class Policies
     }
 
-    namespace Core_Services {
+    namespace Services {
+        class AuthService {
+            +RegisterAsync(request)
+            +LoginAsync(request)
+            +LoginWithGoogleAsync(request)
+        }
+        class TokenService {
+            +CreateToken(user)
+        }
+        class Passwords {
+            <<static>>
+            +Hash(password)
+            +Verify(hash, password)
+        }
         class HotspotService {
+            +GetAllAsync(source, status)
             +AddManualAsync(request)
             +UpdateManualAsync(id, request)
             +DeleteAsync(id)
@@ -231,103 +210,104 @@ classDiagram
         class UserService {
             +ToggleActiveAsync(id)
         }
-        class HotspotSyncService {
-            +RunAsync(progress)
+        class SyncService {
+            +RunAsync()
         }
-        class FirmsCsvParser
+        class SyncBackgroundService
+        class ActivityLogService
         class FwiPredictionModel
-        class FallbackWeatherProvider
-        class SimulatedWeatherProvider
-        class CellularAutomataSimulator
-        class InMemoryRepositories
+        class FireSpreadSimulator
     }
 
     namespace Integrations {
         class FirmsClient
-        class OpenWeatherClient
+        class FirmsCsvParser
+        class WeatherClient
+        class GoogleOAuthClient
     }
 
-    namespace Infrastructure {
-        class AppDbContext
-        class EfRepositories
-        class DatabaseInitializer
-        class AuthService
-        class NotificationService
-    }
-
-    namespace Frontend_WPF {
-        class AdminWorkspace
-        class IAdminBackend {
-            <<interface>>
+    namespace Data {
+        class AppDbContext {
+            +NextIdAsync(kind)
         }
-        class ApiAdminBackend
-        class LocalAdminBackend
-        class HotspotRow
-        class AdminViews
+        class DatabaseInitializer
+        class DemoData
     }
 
-    namespace Api {
-        class IgnisApi
-        class SyncBackgroundService
-    }
+    %% route -> service
+    AuthEndpoints --> AuthService
+    HotspotEndpoints --> HotspotService
+    HotspotEndpoints --> PredictionService
+    AdminEndpoints --> UserService
+    AdminEndpoints --> SyncService
+    AdminEndpoints --> ActivityLogService
+    HotspotEndpoints ..> Policies
+    AdminEndpoints ..> Policies
 
-    %% service memakai abstraksi
-    HotspotService --> IHotspotRepository
-    HotspotService --> IActivityLog
-    PredictionService --> IPredictionRepository
-    PredictionService --> IWeatherRepository
-    PredictionService --> IWeatherProvider
-    PredictionService --> IPredictionModel
-    UserService --> IUserRepository
-    HotspotSyncService --> IFirmsClient
-    HotspotSyncService --> IWeatherProvider
-    HotspotSyncService --> HotspotService
-    HotspotSyncService --> ISettingsProvider
-    HotspotSyncService ..> FirmsCsvParser
-
-    %% implementasi
-    IPredictionModel <|.. FwiPredictionModel
-    IWeatherProvider <|.. FallbackWeatherProvider
-    IWeatherProvider <|.. SimulatedWeatherProvider
-    IWeatherProvider <|.. OpenWeatherClient
-    FallbackWeatherProvider --> OpenWeatherClient : utama
-    FallbackWeatherProvider --> SimulatedWeatherProvider : cadangan
-    IFirmsClient <|.. FirmsClient
-    IFireSpreadSimulator <|.. CellularAutomataSimulator
-    IAuthService <|.. AuthService
-    INotifier <|.. NotificationService
-    IHotspotRepository <|.. InMemoryRepositories
-    IHotspotRepository <|.. EfRepositories
-    IWeatherRepository <|.. EfRepositories
-    IPredictionRepository <|.. EfRepositories
-    IUserRepository <|.. EfRepositories
-    IActivityLog <|.. EfRepositories
-    EfRepositories --> AppDbContext
+    %% service -> pendukung
+    AuthService --> AppDbContext
+    AuthService --> TokenService
+    AuthService --> GoogleOAuthClient
+    AuthService ..> Passwords
+    HotspotService --> AppDbContext
+    HotspotService --> ActivityLogService
+    PredictionService --> AppDbContext
+    PredictionService --> WeatherClient
+    PredictionService --> FwiPredictionModel
+    UserService --> AppDbContext
+    ActivityLogService --> AppDbContext
+    SyncService --> FirmsClient
+    SyncService --> WeatherClient
+    SyncService --> HotspotService
+    SyncService ..> FirmsCsvParser
+    SyncBackgroundService --> SyncService
     DatabaseInitializer --> AppDbContext
+    DatabaseInitializer ..> DemoData
+    DemoData ..> Passwords
 
-    %% frontend: view -> workspace -> backend (API atau demo)
-    AdminViews --> AdminWorkspace
-    AdminWorkspace --> IAdminBackend
-    AdminWorkspace ..> HotspotRow
-    IAdminBackend <|.. ApiAdminBackend
-    IAdminBackend <|.. LocalAdminBackend
-    ApiAdminBackend ..> IgnisApi : HTTP
-    LocalAdminBackend --> HotspotService
-    LocalAdminBackend --> PredictionService
-    LocalAdminBackend --> UserService
-
-    %% API memanggil service
-    IgnisApi --> HotspotService
-    IgnisApi --> PredictionService
-    IgnisApi --> UserService
-    IgnisApi --> HotspotSyncService
-    SyncBackgroundService --> HotspotSyncService
-
-    note for CellularAutomataSimulator "TODO: belum diimplementasikan (stub)"
-    note for AuthService "TODO: belum diimplementasikan (stub)"
-    note for NotificationService "TODO: belum diimplementasikan (stub)"
-    note for EfRepositories "PostgreSQL: Hotspot, Weather, Prediction, User, ActivityLog"
-    note for InMemoryRepositories "Mode demo dan pengujian"
+    note for FireSpreadSimulator "TODO: belum diimplementasikan (stub)"
+    note for AppDbContext "PostgreSQL atau EF InMemory. Id dibuat dari sequence database."
+    note for WeatherClient "OpenWeather bila ada key, selain itu data simulasi"
 ```
 
-Arah dependensi proyek: `Frontend → Core ← Infrastructure`, `Integrations → Core`, `Api → Core + Infrastructure + Integrations`.
+## 3. Desktop (`Ignis.Frontend`)
+
+```mermaid
+classDiagram
+    direction LR
+
+    class IgnisApiClient {
+        +CurrentUser UserDto
+        +IsLoggedIn bool
+        +IsAdmin bool
+        +LoginAsync(email, password)
+        +RegisterAsync(name, email, password)
+        +LoginWithGoogleAsync(code, verifier, redirectUri)
+        +GetHotspotsAsync()
+        +SyncAsync()
+    }
+    class GoogleSignIn {
+        <<static>>
+        +RunAsync(clientId)
+    }
+    class AdminWorkspace
+    class AppSettings
+    class LoginFormViewModel
+    class RegisterViewModel
+    class MainWindowViewModel
+    class AdminViews
+    class IgnisApi {
+        <<Ignis.Api>>
+    }
+
+    LoginFormViewModel --> IgnisApiClient
+    LoginFormViewModel ..> GoogleSignIn
+    RegisterViewModel --> IgnisApiClient
+    MainWindowViewModel --> IgnisApiClient : cek login dan role
+    AdminViews --> AdminWorkspace
+    AdminWorkspace --> IgnisApiClient
+    AdminWorkspace --> AppSettings
+    IgnisApiClient ..> IgnisApi : HTTP + JWT
+```
+
+Arah dependensi proyek: `Frontend → Shared ← Api`. Frontend hanya bicara ke server lewat HTTP.

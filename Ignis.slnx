@@ -1,8 +1,6 @@
 <Solution>
-  <Project Path="Ignis.Core/Ignis.Core.csproj" />
-  <Project Path="Ignis.Core.Tests/Ignis.Core.Tests.csproj" />
-  <Project Path="Ignis.Infrastructure/Ignis.Infrastructure.csproj" />
-  <Project Path="Ignis.Integrations/Ignis.Integrations.csproj" />
   <Project Path="Ignis.Api/Ignis.Api.csproj" />
   <Project Path="Ignis.Frontend/Ignis.Frontend.csproj" />
+  <Project Path="Ignis.Shared/Ignis.Shared.csproj" />
+  <Project Path="Ignis.Tests/Ignis.Tests.csproj" />
 </Solution>

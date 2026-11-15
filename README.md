@@ -9,49 +9,86 @@ Anggota 4: Natanael Sebastian Simanjuntak-24/542676/TK/60273</br>
 
 ## Struktur solution
 
+Hanya dua aplikasi yang berjalan: **server** (`Ignis.Api`) dan **aplikasi desktop** (`Ignis.Frontend`). Dua proyek lainnya pendukung.
+
 | Proyek | Peran |
 |---|---|
-| `Ignis.Core` | Domain + logika murni: entity, enum, interface, service (prediksi, hotspot, pengguna, sinkronisasi), parser FIRMS, implementasi in-memory (mode demo). Tanpa WPF/EF/HTTP. |
-| `Ignis.Integrations` | Klien HTTP eksternal: NASA FIRMS dan OpenWeather. |
-| `Ignis.Infrastructure` | Persistensi PostgreSQL (EF Core), DI penyimpanan, stub auth/notifikasi. |
-| `Ignis.Api` | ASP.NET Core minimal API (hotspot, prediksi, pengguna, sinkronisasi). |
-| `Ignis.Frontend` | Aplikasi WPF (View + ViewModel). Data lewat `Ignis.Api` (mode `Api`) atau data demo di memori (mode `Demo`). |
-| `Ignis.Core.Tests` | Unit test logika Core. |
+| `Ignis.Api` | Server ASP.NET Core: semua logika bisnis, database (PostgreSQL), login/JWT, dan panggilan ke NASA FIRMS/OpenWeather/Google. |
+| `Ignis.Frontend` | Aplikasi desktop WPF (View + ViewModel). Tidak punya logika bisnis; semua data lewat HTTP ke `Ignis.Api`. |
+| `Ignis.Shared` | Kontrak bersama server dan desktop: enum, DTO (bentuk JSON), `Region`. Tanpa dependensi lain. |
+| `Ignis.Tests` | Unit test domain/service dan tes end-to-end API (login, otorisasi). |
 
-Arah dependensi: `Frontend → Core ← Infrastructure`, `Integrations → Core`, `Api → Core, Infrastructure, Integrations`.
+Dependensi: `Frontend → Shared ← Api`, `Tests → Api, Shared`. Frontend tidak pernah merujuk `Ignis.Api`.
+
+### Peta kode: class itu ada di mana?
+
+**`Ignis.Api/`** (satu folder = satu peran)
+
+| Folder | Isi | Class |
+|---|---|---|
+| `Program.cs` | Titik masuk; hanya merangkai layanan, middleware, dan route | — |
+| `Endpoints/` | Definisi route HTTP (tipis, memanggil Services) | `AuthEndpoints`, `HotspotEndpoints`, `AdminEndpoints`, `Policies`, `Mappings` (entity → DTO) |
+| `Services/` | Logika use case | `AuthService`, `TokenService`, `Passwords`, `HotspotService`, `PredictionService`, `UserService`, `SyncService` (+ `SyncBackgroundService`), `ActivityLogService`, `FwiPredictionModel`, `FireSpreadSimulator` (stub) |
+| `Domain/` | Entity dan aturan bisnis murni (tanpa EF/HTTP) | `Hotspot` → `SatelliteHotspot`/`ManualHotspot`; `User` → `Admin`/`RegisteredUser`; `WeatherData`, `Prediction`, `MonitoringArea`, `Notification`, `DomainException`, `Coordinate`, `Vector` |
+| `Data/` | Database | `AppDbContext` (pemetaan tabel + generator Id), `DatabaseInitializer` (buat tabel, seed, admin pertama), `DemoData` |
+| `Integrations/` | Panggilan ke layanan luar | `FirmsClient`, `FirmsCsvParser`, `WeatherClient`, `GoogleOAuthClient`, `IntegrationOptions` |
+| `Support/` | Pendukung kecil | `DotEnv` (baca `.env`), `ErrorHandling` (exception → HTTP 400/401) |
+
+**`Ignis.Frontend/`**
+
+| Folder | Isi |
+|---|---|
+| `Views/` | Tampilan XAML (`Admin/`, `Auth/`, `Dashboard/`, `Shared/`) |
+| `ViewModels/` | Logika tampilan (`MainWindowViewModel`, `Auth/LoginFormViewModel`, `Auth/RegisterViewModel`, ...) |
+| `Services/Backend/` | `IgnisApiClient` (satu-satunya pintu ke server + sesi login), `GoogleSignIn` (buka browser untuk login Google) |
+| `Services/Admin/` | `AdminWorkspace` (cache data admin), `AppSettings` (pengaturan lokal) |
+| `Models/` | Baris tampilan (`Admin/Rows.cs`) dan model dashboard |
+| `Navigation/` | `DialogService` (buka jendela login/admin) |
+
 Diagram kelas: [docs/class-diagram.md](docs/class-diagram.md).
 
 ## Menjalankan
 
 ```bash
 dotnet build Ignis.slnx
-dotnet test Ignis.Core.Tests
+dotnet test Ignis.Tests
 ```
 
-**A. Mode demo (tanpa database, data di memori)**
+**A. Tanpa database (data demo di memori)**
 
 ```bash
-dotnet run --project Ignis.Api                           # API di http://localhost:5000
-IGNIS_BACKEND=Demo dotnet run --project Ignis.Frontend   # desktop tanpa API (login: admin / admin)
+dotnet run --project Ignis.Api        # API di http://localhost:5000
+dotnet run --project Ignis.Frontend   # desktop (terminal kedua)
 ```
 
-**B. Dengan PostgreSQL (untuk tugas)**
+Login admin: `admin@ignis.example` / `Ignis@123` (akun demo lain: `andi.pratama@example.com`, password sama). Data hilang saat API berhenti.
+
+**B. Dengan PostgreSQL**
 
 1. Nyalakan PostgreSQL dan buat database `ignis` (pilih salah satu):
    - Docker dari terminal: salin `.env.example` ke `.env`, isi `IGNIS_DB_PASSWORD`, lalu `docker compose up -d`.
    - PostgreSQL yang sudah terpasang di laptop: buat database `ignis` beserta user-nya. Skema dibuat otomatis oleh API; skrip setara ada di `database/schema.sql`.
-2. Di `.env` (root repo) isi `Storage__Provider=Postgres`, `ConnectionStrings__Ignis=...`, dan opsional `Storage__SeedDemoData=true` (mengisi data contoh bila tabel masih kosong).
-3. `dotnet run --project Ignis.Api` (tabel dibuat otomatis), lalu cek `http://localhost:5000/health`.
-4. `dotnet run --project Ignis.Frontend`, login `admin` / `admin`. Mode default adalah `Api` (alamat `http://localhost:5000/`, bisa diubah di `%AppData%\IgnisAdmin\settings.json`).
+2. Di `.env` (root repo) isi `Storage__Provider=Postgres`, `ConnectionStrings__Ignis=...`, dan `Storage__SeedDemoData=true` (data contoh + akun demo) **atau** `Admin__Email` dan `Admin__Password` (admin pertama tanpa data demo).
+3. `dotnet run --project Ignis.Api` (tabel dan sequence Id dibuat otomatis), lalu cek `http://localhost:5000/health`.
+4. `dotnet run --project Ignis.Frontend` dan login. Alamat API default `http://localhost:5000/`; ubah lewat env `IGNIS_API_URL` atau `%AppData%\IgnisAdmin\settings.json`.
 5. Buka **Kelola Hotspot**, klik **Tambah Hotspot**, lalu cek di database: `SELECT * FROM hotspots h JOIN manual_hotspots m USING (hotspot_id);`
 
-Dokumentasi: [skema dan ERD](docs/database.md), [fitur untuk tugas OOP](docs/oop-feature.md), [diagram kelas](docs/class-diagram.md).
+Dokumentasi: [skema dan ERD](docs/database.md), [fitur untuk tugas OOP](docs/oop-feature.md), [diagram kelas](docs/class-diagram.md), [login Google](docs/google-oauth.md).
+
+## Keamanan
+
+- **Login**: email + password (hash PBKDF2) atau Google. Server menerbitkan token JWT (berlaku 60 menit, `Jwt:ExpiresMinutes`); desktop melampirkannya di setiap permintaan.
+- **Otorisasi**: semua `/api/*` butuh token. Baca data = pengguna mana pun yang login. Tambah/ubah/hapus hotspot, kelola pengguna, log aktivitas, dan sinkronisasi = hanya role `Admin`.
+- **Registrasi publik** selalu menjadi `Registered`, tidak pernah `Admin`. Admin dibuat lewat seed demo atau `Admin__Email`/`Admin__Password`.
+- **Wajib di server sungguhan**: isi `Jwt__Key` (≥ 32 karakter), jangan nyalakan `Storage__SeedDemoData`, dan pasang HTTPS (token dikirim sebagai header, jadi tanpa HTTPS bisa disadap).
+- Batasan yang diketahui: token tidak bisa dicabut sebelum kedaluwarsa (akun yang dinonaktifkan baru tertolak saat login berikutnya), dan belum ada pembatasan percobaan login.
 
 ## Status backend (yang belum selesai)
 
 Tanda `TODO(backend)` di kode menandai hal berikut:
-- Autentikasi (JWT, register/login, Google OAuth) — `Ignis.Infrastructure/Services/AuthService.cs`. **Semua endpoint API masih terbuka tanpa auth.**
-- Notifikasi dan area pantauan — `NotificationService.cs`, belum ada endpoint.
-- Simulasi penyebaran api — `Ignis.Core/Simulation/CellularAutomataSimulator.cs` (stub).
+- Notifikasi dan area pantauan — entity ada di `Domain/`, belum ada layanan dan endpoint.
+- Simulasi penyebaran api — `Ignis.Api/Services/FireSpreadSimulator.cs` (stub).
 - EF Core migration (skema dibuat dengan `EnsureCreated`; untuk produksi ganti dengan migration).
-- Generator Id yang aman multi-user (sequence) dan pemindahan konfigurasi FIRMS/weather dari desktop ke server.
+- Isian API key FIRMS/weather di halaman **Pengaturan** desktop belum dipakai: server membaca key dari konfigurasinya sendiri (`Integrations__*`). Sediakan `/api/settings` atau hapus isian itu.
+- Pencabutan token (logout di sisi server), pembatasan percobaan login, dan sinkronisasi terjadwal belum diuji dengan API key FIRMS sungguhan.
+- Jalur PostgreSQL (sequence Id, `EnsureCreated`) belum dijalankan terhadap server PostgreSQL nyata di lingkungan pengembangan ini; tes otomatis memakai EF InMemory.

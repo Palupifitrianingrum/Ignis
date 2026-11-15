@@ -18,8 +18,8 @@
                    Margin="10,4,0,20"
                    HorizontalAlignment="Center"/>
 
-        <shared:IconTextBox Placeholder="Username"
-                            InputText="{Binding Username, Mode=TwoWay}"
+        <shared:IconTextBox Placeholder="Email"
+                            InputText="{Binding Email, Mode=TwoWay}"
                             Margin="10,0,0,8"/>
 
         <shared:IconPasswordBox Placeholder="Password"

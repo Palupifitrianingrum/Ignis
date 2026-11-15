@@ -1,8 +1,7 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Ignis.Core.Enums;
-using Ignis.Core.ValueObjects;
+using Ignis.Shared;
 using Ignis.Frontend.Models.Admin;
 using Ignis.Frontend.Services.Admin;
 

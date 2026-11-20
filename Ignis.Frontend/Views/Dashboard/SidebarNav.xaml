@@ -68,7 +68,7 @@
 
         <!-- Fixed Width Inner Container (260px) so contents don't wrap/jump while expanding -->
         <Grid Width="260" HorizontalAlignment="Left">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
+            <ScrollViewer VerticalScrollBarVisibility="Hidden"
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Orientation="Vertical" Margin="12,14,14,20">
 

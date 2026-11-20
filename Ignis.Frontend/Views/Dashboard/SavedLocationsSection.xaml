@@ -44,10 +44,10 @@
         </Style>
     </UserControl.Resources>
 
-    <StackPanel Margin="0,0,0,18">
+    <StackPanel>
 
         <!-- Akun pengguna terdaftar: daftar lokasi tersimpan -->
-        <StackPanel Visibility="{Binding CanUseSavedLocations, Converter={StaticResource B2V}}">
+        <StackPanel Margin="0,0,0,18" Visibility="{Binding CanUseSavedLocations, Converter={StaticResource B2V}}">
             <Grid Margin="2,0,2,10">
                 <TextBlock Text="LOKASI SAYA" FontSize="11" FontWeight="Bold" Foreground="#658A85" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                 <Button Style="{StaticResource AddLocationButton}" Command="{Binding AddLocationCommand}" HorizontalAlignment="Right"
@@ -101,10 +101,5 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </StackPanel>
-
-        <!-- Admin: fitur ini khusus pengguna terdaftar -->
-        <TextBlock Visibility="{Binding ShowLocationsHint, Converter={StaticResource B2V}}"
-                   Text="Lokasi tersimpan dan notifikasi tersedia untuk akun pengguna terdaftar (bukan admin)."
-                   FontSize="11" Foreground="#8FB5AF" TextWrapping="Wrap" Margin="2,0,2,0"/>
     </StackPanel>
 </UserControl>

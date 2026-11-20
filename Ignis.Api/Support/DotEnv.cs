@@ -8,6 +8,10 @@ public static class DotEnv
 {
     public static void Load(string fileName)
     {
+        // Jangan muat .env saat dijalankan dari test runner (xUnit) agar tes tetap hermetik dan memakai InMemory.
+        if (AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().Name?.StartsWith("xunit", StringComparison.OrdinalIgnoreCase) == true))
+            return;
+
         var path = Find(fileName, Directory.GetCurrentDirectory()) ?? Find(fileName, AppContext.BaseDirectory);
         if (path == null) return;
 

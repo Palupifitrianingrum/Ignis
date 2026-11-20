@@ -73,7 +73,7 @@ Login admin: `admin@ignis.example` / `Ignis@123` (akun demo lain: `andi.pratama@
 4. `dotnet run --project Ignis.Frontend` dan login. Alamat API default `http://localhost:5000/`; ubah lewat env `IGNIS_API_URL` atau `%AppData%\IgnisAdmin\settings.json`.
 5. Buka **Kelola Hotspot**, klik **Tambah Hotspot**, lalu cek di database: `SELECT * FROM hotspots h JOIN manual_hotspots m USING (hotspot_id);`
 
-Dokumentasi: [skema dan ERD](docs/database.md), [fitur untuk tugas OOP](docs/oop-feature.md), [diagram kelas](docs/class-diagram.md), [autentikasi dan role](docs/autentikasi.md), [login Google](docs/google-oauth.md), [simulasi penyebaran api](docs/simulasi-api.md), [key dan integrasi NASA FIRMS/OpenWeather](docs/integrasi-data.md), [lokasi tersimpan, notifikasi, dan model asap](docs/notifikasi.md).
+Dokumentasi: [skema dan ERD](docs/database.md), [fitur untuk tugas OOP](docs/oop-feature.md), [diagram kelas](docs/class-diagram.md), [Supabase](docs/supabase.md), [autentikasi dan role](docs/autentikasi.md), [login Google](docs/google-oauth.md), [simulasi penyebaran api](docs/simulasi-api.md), [key dan integrasi NASA FIRMS/OpenWeather](docs/integrasi-data.md), [lokasi tersimpan, notifikasi, dan model asap](docs/notifikasi.md).
 
 ## Keamanan
 

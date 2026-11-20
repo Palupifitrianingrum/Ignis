@@ -27,6 +27,7 @@ public class AuthSecurityTests
             builder.UseSetting("Auth:RateLimitEnabled", rateLimit ? "true" : "false");
             builder.UseSetting("Auth:RateLimitPerMinute", limit.ToString());
             builder.UseSetting("Google:ClientId", "client-tes.apps.googleusercontent.com");
+            builder.UseSetting("Google:ClientSecret", "");
             if (verifier != null || google != null)
                 builder.ConfigureServices(s =>
                 {

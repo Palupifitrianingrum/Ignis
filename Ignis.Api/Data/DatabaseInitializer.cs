@@ -1,6 +1,8 @@
 using Ignis.Api.Domain;
 using Ignis.Api.Services;
+using Ignis.Api.Support;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Ignis.Api.Data;
 
@@ -23,18 +25,34 @@ public static class DatabaseInitializer
 
         if (!postgres || config.GetValue("Storage:AutoCreate", true))
         {
-            await db.Database.EnsureCreatedAsync(ct);
+            if (postgres) await CreateTablesIfMissingAsync(db, ct);
+            else await db.Database.EnsureCreatedAsync(ct);
             if (postgres)
             {
                 await CreateIdSequencesAsync(db, ct);
                 await EnsureAppSettingsTableAsync(db, ct);
                 await EnsureNotificationColumnsAsync(db, ct);
                 await EnsureAuthColumnsAsync(db, ct);
+                if (services.GetRequiredService<DatabaseTarget>().IsSupabase) await EnableRowLevelSecurityAsync(db, log, ct);
             }
         }
 
         if (config.GetValue("Storage:SeedDemoData", !postgres)) await SeedAsync(db, log, ct);
         await EnsureAdminAsync(db, config, log, ct);
+    }
+
+    /// <summary>
+    /// Buat tabel Ignis bila tabel "users" belum ada di skema public. EnsureCreated tidak dipakai di PostgreSQL karena ia menganggap database
+    /// "sudah ada isinya" bila skema mana pun punya tabel; Supabase punya skema bawaan (auth, storage, ...) sehingga tabel Ignis tidak akan dibuat.
+    /// </summary>
+    private static async Task CreateTablesIfMissingAsync(AppDbContext db, CancellationToken ct)
+    {
+        await db.Database.CanConnectAsync(ct);
+        var exists = await db.Database.SqlQueryRaw<bool>("SELECT to_regclass('public.users') IS NOT NULL AS \"Value\"").SingleAsync(ct);
+        if (exists) return;
+        // Tanpa "users" berarti belum pernah diinisialisasi; buang sisa app_settings dari start yang terhenti di tengah jalan.
+        await db.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS public.app_settings", ct);
+        await db.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>().CreateTablesAsync(ct);
     }
 
     /// <summary>Sequence untuk Id (HS-, WX-, PR-, U-). Idempoten; juga menutup kasus database lama yang dibuat sebelum sequence ada.</summary>
@@ -94,6 +112,20 @@ public static class DatabaseInitializer
             "CREATE UNIQUE INDEX IF NOT EXISTS \"IX_users_google_subject\" ON users (google_subject) WHERE google_subject IS NOT NULL"
         };
         foreach (var sql in statements) await db.Database.ExecuteSqlRawAsync(sql, ct);   // semua konstanta, bukan input pengguna
+    }
+
+    /// <summary>
+    /// Supabase membuka semua tabel di skema "public" lewat REST API-nya (kunci anon/publik). Tanpa Row Level Security siapa pun yang
+    /// tahu kunci anon bisa membaca tabel users (termasuk hash password). RLS diaktifkan TANPA policy = REST API menolak semuanya;
+    /// Ignis.Api tetap bisa mengakses karena terhubung langsung sebagai role database (bukan lewat REST API).
+    /// </summary>
+    private static async Task EnableRowLevelSecurityAsync(AppDbContext db, ILogger log, CancellationToken ct)
+    {
+        var tables = db.Model.GetEntityTypes().Select(t => t.GetTableName()).Where(n => n != null).Distinct().ToList();
+        tables.Add("app_settings");
+        foreach (var table in tables.Distinct())
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE IF EXISTS public.\"" + table + "\" ENABLE ROW LEVEL SECURITY", ct);   // nama dari model EF, bukan input pengguna
+        log.LogInformation("Row Level Security aktif untuk {Count} tabel (Supabase).", tables.Distinct().Count());
     }
 
     private static async Task SeedAsync(AppDbContext db, ILogger log, CancellationToken ct)

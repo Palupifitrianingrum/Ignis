@@ -44,11 +44,13 @@ builder.Services.AddSingleton<LoginThrottle>();
 builder.Services.AddSingleton<IGoogleIdTokenVerifier, GoogleLibraryVerifier>();
 builder.Services.AddSingleton(config.GetSection("Notifications").Get<NotificationOptions>() ?? new NotificationOptions());
 
-// ---- Database: PostgreSQL (Storage:Provider=Postgres) atau InMemory untuk dev/test (default) ----
-if ((config["Storage:Provider"] ?? "InMemory").Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+// ---- Database: Supabase (Supabase:DbUrl terisi), PostgreSQL lokal (Storage:Provider=Postgres), atau InMemory untuk dev/test (default) ----
+var database = DatabaseTarget.Resolve(config);
+builder.Services.AddSingleton(database);
+if (database.Provider == "Postgres")
 {
-    var cs = config.GetConnectionString("Ignis")
-             ?? throw new InvalidOperationException("ConnectionStrings:Ignis belum diisi untuk Storage:Provider=Postgres.");
+    var cs = database.ConnectionString
+             ?? throw new InvalidOperationException("ConnectionStrings:Ignis belum diisi untuk Storage:Provider=Postgres (atau isi Supabase__DbUrl).");
     builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(cs));
 }
 else
@@ -145,7 +147,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok", storage = config["Storage:Provider"] ?? "InMemory" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok", storage = database.IsSupabase ? "Supabase" : database.Provider }));
 app.MapAuthEndpoints();
 app.MapHotspotEndpoints();
 app.MapAdminEndpoints();

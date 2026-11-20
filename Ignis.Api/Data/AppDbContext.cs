@@ -72,6 +72,31 @@ public class AppDbContext : DbContext
         return $"{prefix}-{number:0000}";
     }
 
+    /// <summary>
+    /// <paramref name="count"/> Id sekaligus (satu perjalanan ke database), untuk impor massal. Semantik sama dengan <see cref="NextIdAsync"/>;
+    /// nomor tidak dijamin berurutan rapat bila ada penulis lain bersamaan.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> NextIdsAsync(IdKind kind, int count, CancellationToken ct = default)
+    {
+        if (count <= 0) return Array.Empty<string>();
+
+        var (prefix, sequence) = IdFormats[kind];
+        if (Database.IsNpgsql())
+        {
+            // nama sequence = konstanta di atas, count = int; tidak ada input pengguna dalam SQL ini
+            var sql = "SELECT nextval('" + sequence + "') AS \"Value\" FROM generate_series(1, " + count + ")";
+            var numbers = await Database.SqlQueryRaw<long>(sql).ToListAsync(ct);
+            return numbers.Select(n => $"{prefix}-{n:0000}").ToList();
+        }
+
+        lock (MemoryCounters)
+        {
+            var ids = new List<string>(count);
+            for (int i = 0; i < count; i++) ids.Add($"{prefix}-{++MemoryCounters[kind]:0000}");
+            return ids;
+        }
+    }
+
     protected override void ConfigureConventions(ModelConfigurationBuilder cb)
     {
         // Aplikasi memakai waktu lokal (DateTime.Now / Kind Unspecified). Npgsql menolak itu untuk "timestamp with time zone",

@@ -70,8 +70,10 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<FwiPredictionModel>();
 builder.Services.AddSingleton<FireSpreadSimulator>();
-builder.Services.AddHttpClient<FirmsClient>(c => c.Timeout = TimeSpan.FromSeconds(30));
-builder.Services.AddHttpClient<WeatherClient>(c => c.Timeout = TimeSpan.FromSeconds(30));
+builder.Services.AddSingleton<IntegrationStatus>();   // penjaga satu-sinkronisasi dan status cuaca terakhir
+// Timeout pendek: sinkronisasi dipicu dari desktop (batas 60 detik). User-Agent generik, tanpa data pengguna.
+builder.Services.AddHttpClient<FirmsClient>(c => { c.Timeout = TimeSpan.FromSeconds(25); c.DefaultRequestHeaders.UserAgent.ParseAdd("Ignis-Api/1.0"); });
+builder.Services.AddHttpClient<WeatherClient>(c => { c.Timeout = TimeSpan.FromSeconds(15); c.DefaultRequestHeaders.UserAgent.ParseAdd("Ignis-Api/1.0"); });
 builder.Services.AddHttpClient<GoogleOAuthClient>(c => c.Timeout = TimeSpan.FromSeconds(30));
 builder.Services.AddScoped<ActivityLogService>();
 builder.Services.AddScoped<AuthService>();

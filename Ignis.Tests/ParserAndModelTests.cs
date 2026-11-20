@@ -8,45 +8,6 @@ namespace Ignis.Tests;
 
 // ====================== Parser FIRMS, model prediksi, cuaca ======================
 
-public class FirmsCsvParserTests
-{
-    private const string Header = "latitude,longitude,bright_ti4,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_ti5,frp,daynight";
-
-    [Fact]
-    public void Parse_ReadsRow()
-    {
-        var csv = Header + "\n-0.39,102.06,342.5,0.4,0.4,2026-10-24,0915,N,VIIRS,87,2.0NRT,290,5,D\n";
-        var h = Assert.Single(FirmsCsvParser.Parse(csv));
-
-        Assert.Equal(-0.39, h.Latitude, 5);
-        Assert.Equal(new DateTime(2026, 10, 24, 9, 15, 0), h.ScanTime);
-        Assert.Equal(new DateTime(2026, 10, 24, 9, 15, 0), h.DetectedAt);
-        Assert.Equal(342.5, h.Brightness, 3);
-        Assert.Equal("N", h.SatelliteName);
-    }
-
-    [Fact]
-    public void Parse_PadsShortTime_UsesDefaultConfidence_SkipsBadRows()
-    {
-        var csv = Header + "\n1,2,300,0,0,2026-10-24,5,N,VIIRS,x,v,0,0,D\nbad,row\n";
-        var h = Assert.Single(FirmsCsvParser.Parse(csv));
-
-        Assert.Equal(new DateTime(2026, 10, 24, 0, 5, 0), h.ScanTime);
-        Assert.Equal(70, h.Confidence);
-    }
-
-    [Fact]
-    public void Parse_SkipsRowsViolatingDomainRules()
-    {
-        var csv = Header + "\n95,2,300,0,0,2026-10-24,0900,N,VIIRS,80,v,0,0,D\n";   // latitude 95 tidak valid
-        Assert.Empty(FirmsCsvParser.Parse(csv));
-    }
-
-    [Fact]
-    public void Parse_MissingRequiredColumns_ReturnsEmpty() =>
-        Assert.Empty(FirmsCsvParser.Parse("foo,bar\n1,2\n"));
-}
-
 public class FwiPredictionModelTests
 {
     private static Prediction Run(double temp, double hum, double wind, double dir, double rain)

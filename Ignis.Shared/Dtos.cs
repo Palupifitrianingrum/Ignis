@@ -111,6 +111,9 @@ public sealed record SyncResult(
     ConnectionState Weather,
     DateTime FinishedAt);
 
+/// <summary>Status satu layanan luar (hasil pemeriksaan langsung). Pesan tidak pernah memuat API key.</summary>
+public sealed record ProviderStatusDto(string Name, bool KeyConfigured, ConnectionState State, string Message);
+
 // ---------- Autentikasi ----------
 
 public sealed record LoginRequest(string Email, string Password);

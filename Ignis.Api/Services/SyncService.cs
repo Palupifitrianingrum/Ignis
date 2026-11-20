@@ -3,70 +3,122 @@ using Ignis.Shared;
 
 namespace Ignis.Api.Services;
 
-/// <summary>Sinkronisasi (UC-02): impor hotspot NASA FIRMS dan cek koneksi cuaca, dengan retry.</summary>
+/// <summary>
+/// Sinkronisasi (UC-02): impor hotspot NASA FIRMS dan cek koneksi cuaca.
+///
+/// Aturan penanganan kegagalan:
+///  - Hanya gangguan sementara (jaringan, timeout, HTTP 5xx) yang dicoba ulang, dengan jeda berlipat dua.
+///  - Key salah atau batas transaksi terlampaui tidak diulang (tidak akan membaik) dan menghentikan sumber lain,
+///    karena memakai key yang sama.
+///  - Satu sumber gagal tidak menggagalkan sumber lain (kecuali gangguan koneksi di sumber pertama); hasil sebagian dilaporkan per sumber.
+/// </summary>
 public sealed class SyncService(FirmsClient firms, WeatherClient weather, HotspotService hotspots,
-                                IntegrationOptions options, ActivityLogService log)
+                                IntegrationOptions options, ActivityLogService log, IntegrationStatus status,
+                                ILogger<SyncService>? logger = null)
 {
-    private static int _running; // satu sinkronisasi pada satu waktu (lintas instance)
-
     public async Task<SyncResult> RunAsync(CancellationToken ct = default)
     {
-        if (Interlocked.Exchange(ref _running, 1) == 1)
+        if (!status.TryBeginSync())
             return new SyncResult(new[] { "Sinkronisasi sedang berjalan." }, 0, ConnectionState.Unknown, ConnectionState.Unknown, DateTime.Now);
 
         try
         {
-            var msg = new List<string>();
+            var messages = new List<string>();
             int added = 0;
             ConnectionState firmsState;
 
             // --- NASA FIRMS ---
-            if (string.IsNullOrWhiteSpace(options.FirmsKey))
+            if (!firms.IsConfigured)
             {
                 firmsState = ConnectionState.MissingKey;
-                msg.Add("FIRMS dilewati: API key belum diisi (Integrations__FirmsKey).");
+                messages.Add("FIRMS dilewati: API key belum diisi (Integrations__FirmsKey). Lihat docs/integrasi-data.md.");
             }
             else
             {
-                firmsState = ConnectionState.Failed;
-                int attempts = Math.Max(1, options.RetryCount + 1);
-                for (int i = 0; i < attempts; i++)
+                int succeeded = 0;
+                foreach (var source in options.FirmsSourceList)
                 {
                     try
                     {
-                        var csv = await firms.FetchIndonesiaCsvAsync(ct);
-                        added = await hotspots.ImportSatelliteAsync(FirmsCsvParser.Parse(csv), ct);
-                        firmsState = ConnectionState.Connected;
-                        msg.Add($"FIRMS: {added} hotspot baru.");
-                        break;
+                        added += await SyncSourceAsync(source, messages, ct);
+                        succeeded++;
+                    }
+                    catch (IntegrationException ex) when (!ct.IsCancellationRequested)
+                    {
+                        messages.Add($"FIRMS {source} gagal: {ex.Message}");
+                        await log.AddAsync($"Sync FIRMS {source} gagal: {ex.Message}", ct);
+
+                        // Key yang sama dipakai semua sumber: bila ditolak atau kena batas, sumber lain pasti sama.
+                        // Gangguan koneksi pada sumber pertama (belum ada yang berhasil) juga berarti host-nya bermasalah.
+                        if (ex.Failure is IntegrationFailure.InvalidKey or IntegrationFailure.RateLimited ||
+                            (ex.Failure == IntegrationFailure.Unavailable && succeeded == 0))
+                        {
+                            messages.Add("Sumber FIRMS lainnya dilewati.");
+                            break;
+                        }
                     }
                     catch (Exception ex) when (!ct.IsCancellationRequested)
                     {
-                        if (i < attempts - 1)
-                            await Task.Delay(TimeSpan.FromMinutes(Math.Max(0, options.RetryDelayMinutes)), ct);
-                        else
-                        {
-                            msg.Add("FIRMS gagal: " + ex.Message);
-                            await log.AddAsync("Sync FIRMS gagal: " + ex.Message, ct);
-                        }
+                        logger?.LogError(ex, "Sync FIRMS {Source}: gagal memproses atau menyimpan hasil", source);
+                        messages.Add($"FIRMS {source} gagal memproses atau menyimpan hasil ({ex.GetType().Name}). Lihat log server.");
+                        await log.AddAsync($"Sync FIRMS {source} gagal menyimpan hasil ({ex.GetType().Name})", ct);
                     }
                 }
+                firmsState = succeeded > 0 ? ConnectionState.Connected : ConnectionState.Failed;
             }
 
-            // --- Cuaca (cek koneksi; pengambilan per-hotspot terjadi saat prediksi) ---
+            // --- Cuaca (cek koneksi; pengambilan per-hotspot terjadi saat simulasi/prediksi) ---
             var check = await weather.CheckConnectionAsync(ct);
-            msg.Add(check.Message);
+            messages.Add(check.Message);
 
-            return new SyncResult(msg, added, firmsState, check.State, DateTime.Now);
+            return new SyncResult(messages, added, firmsState, check.State, DateTime.Now);
         }
         finally
         {
-            Interlocked.Exchange(ref _running, 0);
+            status.EndSync();
+        }
+    }
+
+    /// <summary>Ambil dan impor satu sumber. Mengembalikan jumlah hotspot baru; melempar <see cref="IntegrationException"/> bila pengambilan gagal.</summary>
+    private async Task<int> SyncSourceAsync(string source, List<string> messages, CancellationToken ct)
+    {
+        var csv = await FetchWithRetryAsync(source, ct);
+        var parsed = FirmsCsvParser.ParseDetailed(csv, options.FirmsMaxRows);
+        var imported = await hotspots.ImportSatelliteAsync(parsed.Hotspots, ct);
+
+        var line = $"FIRMS {source}: {parsed.TotalRows} baris, {imported} hotspot baru";
+        if (parsed.TotalRows == 0)
+        {
+            // Hasil kosong bisa wajar (belum ada deteksi) atau satelitnya sedang tidak mengirim data: beri tahu tanggal data terakhir.
+            var latest = await firms.GetLatestAvailableDateAsync(source, ct);
+            if (latest is { } d) line += $" (data terakhir yang tersedia di FIRMS untuk sumber ini: {d:yyyy-MM-dd})";
+        }
+        if (parsed.Truncated) line += $" (dibatasi {options.FirmsMaxRows} baris dengan keyakinan tertinggi)";
+        if (parsed.Invalid > 0) line += $", {parsed.Invalid} baris tidak valid dilewati";
+        messages.Add(line + ".");
+        return imported;
+    }
+
+    private async Task<string> FetchWithRetryAsync(string source, CancellationToken ct)
+    {
+        int attempts = Math.Max(0, options.RetryCount) + 1;
+        for (int attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await firms.FetchCsvAsync(source, ct);
+            }
+            catch (IntegrationException ex) when (ex.IsTransient && attempt < attempts - 1 && !ct.IsCancellationRequested)
+            {
+                var delay = TimeSpan.FromSeconds(Math.Max(0, options.RetryDelaySeconds) * Math.Pow(2, attempt));
+                logger?.LogWarning("FIRMS {Source} percobaan {Attempt}/{Max} gagal ({Message}); ulang dalam {Delay}", source, attempt + 1, attempts, ex.Message, delay);
+                if (delay > TimeSpan.Zero) await Task.Delay(delay, ct);
+            }
         }
     }
 }
 
-/// <summary>Menjalankan <see cref="SyncService"/> secara berkala. Mati secara default (Sync:Enabled=false). Belum diuji dengan API key FIRMS sungguhan.</summary>
+/// <summary>Menjalankan <see cref="SyncService"/> secara berkala. Mati secara default (Sync:Enabled=false).</summary>
 public sealed class SyncBackgroundService(IServiceScopeFactory scopes, IConfiguration config, ILogger<SyncBackgroundService> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

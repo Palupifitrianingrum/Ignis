@@ -1,7 +1,7 @@
 # TODO Ignis
 
 Dokumen kerja untuk tim. Isi: (1) apa yang belum selesai, (2) struktur proyek dan fungsi tiap bagian, (3) langkah mengerjakan dan menyambungkan frontend dengan backend.
-Terakhir diperbarui 2026-11-21 (setelah simulasi api diselesaikan dan dihubungkan ke frontend). Build berhasil dan 81 tes lulus.
+Terakhir diperbarui 2026-11-21 (setelah simulasi api diselesaikan dan dihubungkan ke frontend). Build berhasil dan 179 tes lulus.
 
 Catatan jujur tentang status: "SELESAI" di bawah berarti kodenya ada dan terbaca konsisten, plus lulus tes otomatis bila ada.
 Tampilan dashboard dan simulasi sudah diperiksa dengan menjalankan aplikasi sungguhan terhadap API sungguhan lalu mengambil screenshot jendela (lihat K8). Klik langsung pada pin peta dan alur login/registrasi lewat formulir belum diuji otomasi, jadi butir bertanda "perlu uji GUI" masih harus dicoba manual.
@@ -42,7 +42,9 @@ Legenda: **BE** = `Ignis.Api`, **FE** = `Ignis.Frontend`. Prioritas: P1 = harus 
 | B6 | Ubah role pengguna (jadikan Admin) | P3 | Belum ada. Sekarang harus ubah langsung di database. | `Services/UserService.cs` |
 | B7 | Pencabutan token / logout sisi server | P3 | Token JWT stateless, berlaku 60 menit. User yang dinonaktifkan baru tertolak saat login berikutnya. | `Services/TokenService.cs` |
 | B8 | Pembatasan percobaan login (rate limiting) | P3 | Belum ada. | `Program.cs` |
-| B10 | Zona waktu | P3 | Semua waktu disimpan sebagai waktu lokal (`timestamp without time zone`). | `Data/AppDbContext.cs` |
+| B10 | Zona waktu | P3 | Semua waktu disimpan sebagai waktu lokal server (`timestamp without time zone`). `acq_time` FIRMS (UTC) kini diubah ke waktu lokal server saat impor, jadi server berzona UTC akan menyimpan UTC. Indonesia punya tiga zona (WIB/WITA/WIT). | `Data/AppDbContext.cs`, `Integrations/FirmsCsvParser.cs` |
+| B12 | Status integrasi di UI | P3 | Server punya `GET /api/integrations/status` (admin), tetapi desktop belum menampilkannya. Tambahkan `IgnisApiClient.GetIntegrationStatusAsync` dan tampilkan di halaman Pengaturan admin (sekaligus menggantikan isian key yang tidak dipakai, F7). | `IgnisApiClient.cs`, `PengaturanPage.xaml.cs` |
+| B13 | Sinkronisasi lama di desktop | P3 | Klien desktop membatasi tiap permintaan 60 detik. Sinkronisasi normal selesai dalam hitungan detik, tetapi bila FIRMS lambat (timeout 25 detik × percobaan ulang) bisa melewatinya; server tetap menyelesaikannya. Bila perlu, jadikan sinkronisasi tugas latar dengan status yang di-poll. | `Services/SyncService.cs` |
 
 ### 1.2 Frontend
 
@@ -64,16 +66,17 @@ Legenda: **BE** = `Ignis.Api`, **FE** = `Ignis.Frontend`. Prioritas: P1 = harus 
 |---|---|---|
 | K1 | Isi `Jwt__Key` | Minimal 32 karakter acak. Kosong = kunci acak sementara, semua user logout tiap server restart. Cara membuatnya ada di `.env.example`. |
 | K2 | Kunci Google | `Google__ClientId` dan `Google__ClientSecret`. Tutorial: [docs/google-oauth.md](docs/google-oauth.md). |
-| K3 | Key FIRMS dan OpenWeather | `Integrations__FirmsKey`, `Integrations__WeatherKey` (atau `OPENWEATHER_API_KEY`). Tanpa key, cuaca memakai data simulasi dan sync FIRMS dilewati. |
-| K4 | **Uji terhadap PostgreSQL nyata (wajib sebelum rilis)** | Sequence Id (`nextval`) dan `EnsureCreated` belum pernah dijalankan terhadap PostgreSQL sungguhan. Tes otomatis memakai EF InMemory. Ini penentu paket penilaian (B11). |
-| K5 | Uji sync FIRMS dengan key asli | `SyncService` dan `SyncBackgroundService` belum diuji dengan key sungguhan. |
-| K6 | Uji OpenWeather asli | `WeatherClient` belum diuji dengan key sungguhan. Simulasi api memakai data cuaca ini. |
+| K3 | Key FIRMS dan OpenWeather | **Terpasang dan terverifikasi (2026-11-21).** Tutorial: [docs/integrasi-data.md](docs/integrasi-data.md). `GET /api/integrations/status` melaporkan `Connected` untuk keduanya. Tanpa key: sinkronisasi hotspot dilewati dan cuaca memakai data simulasi. |
+| K4 | **Uji terhadap PostgreSQL nyata (wajib sebelum rilis)** | Sequence Id (`nextval`, termasuk `NextIdsAsync` untuk impor massal) dan `EnsureCreated` belum pernah dijalankan terhadap PostgreSQL sungguhan. Pada 2026-11-21 `.env` sudah menunjuk `Storage__Provider=Postgres` di `127.0.0.1:5432`, tetapi tidak ada yang mendengarkan di port itu (Docker Desktop terpasang, mesinnya belum menyala), sehingga API gagal start. Nyalakan Docker Desktop lalu `docker compose up -d`, atau set `Storage__Provider=InMemory` sementara. Ini penentu paket penilaian (B11). |
+| K5 | Uji sync FIRMS dengan key asli | **Selesai (2026-11-21)**: 1.010 hotspot nyata diimpor (NOAA-20 dan NOAA-21), jam deteksi benar (UTC → WIB), idempoten. Temuan: `DAY_RANGE=1` hanya mencakup tanggal UTC hari ini, jadi default dinaikkan ke 2; Suomi NPP NRT berhenti sejak 2026-11-02 (dijelaskan otomatis di pesan sinkronisasi). Tersisa: uji impor besar di PostgreSQL sungguhan (K4) dan sinkronisasi terjadwal berjam-jam. |
+| K6 | Uji OpenWeather asli | **Selesai (2026-11-21)**: cuaca sungguhan terbaca (satuan metrik, arah angin asal), dipakai simulasi (`condition` bukan "Simulasi"). |
 | K7 | Uji login Google | Pertukaran kode ke Google baru bisa diuji setelah K2. |
 | K8 | Uji klik GUI | Dashboard, simulasi (jam 0/9/18), dan keadaan server mati sudah diperiksa lewat screenshot aplikasi sungguhan. **Belum diuji otomasi**: formulir login/registrasi, klik pin peta, panel admin, dan Pengaturan. Lakukan satu putaran manual (daftar periksa di Langkah 2). |
 | K9 | Akun demo | Default: `SeedDemoData` aktif untuk InMemory dan mati untuk Postgres. Akun demo memakai password `Ignis@123`. Untuk paket penilaian Postgres, set `Storage__SeedDemoData=true` agar penilai langsung melihat data. |
 | K10 | Bersihkan file lepas | `Ignis.Tests/TmpAccessDemo.cs` (kosong, tidak dipakai, belum di-commit): hapus. |
 | K11 | Commit dokumen OOP | `docs/konsep-oop.md` (penjelasan inheritance/polymorphism/encapsulation) belum di-commit. Nomor barisnya bisa bergeser bila `Hotspot.cs` berubah. |
 | K12 | README sudah usang di dua baris | [README.md](README.md) masih menulis `FireSpreadSimulator (stub)` dan "Simulasi penyebaran api … (stub)" di bagian Status backend. Perbarui sesuai B1. |
+| K13 | Periksa hasil impor di tampilan | Key sudah terverifikasi lewat API. Tersisa pengecekan visual di aplikasi desktop: jalankan Sinkronisasi dari panel admin, lihat pin hotspot baru di peta (ratusan titik; periksa performa Mapsui), klik satu pin lalu pastikan jam, satelit, dan keyakinan tampil benar, dan buka simulasinya. |
 
 ---
 
@@ -84,9 +87,9 @@ Ignis.slnx
 ├── Ignis.Api/          server: logika bisnis, database, login, panggilan ke layanan luar
 ├── Ignis.Frontend/     aplikasi desktop WPF (tampilan saja, data lewat HTTP)
 ├── Ignis.Shared/       kontrak bersama: enum, DTO (bentuk JSON), Region
-├── Ignis.Tests/        unit test dan tes end-to-end (81 tes)
+├── Ignis.Tests/        unit test dan tes end-to-end (179 tes)
 ├── database/schema.sql skrip tabel + sequence Id (dipakai docker-compose)
-├── docs/               ERD, diagram kelas, fitur OOP, konsep OOP, simulasi api, tutorial Google
+├── docs/               ERD, diagram kelas, fitur OOP, konsep OOP, simulasi api, integrasi data (tutorial key), tutorial Google
 ├── docker-compose.yml  PostgreSQL untuk pengembangan
 └── .env.example        daftar pengaturan server (salin ke .env)
 ```
@@ -105,7 +108,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 |---|---|
 | `AuthEndpoints` | `POST /api/auth/register`, `/login`, `/google`; `GET /api/auth/google/config`; `GET /api/auth/me`. Publik kecuali `/me`. |
 | `HotspotEndpoints` | Hotspot (`GET` semua/satu: login; `POST/PUT/DELETE`: Admin), cuaca, prediksi (`GET`: login; `POST` buat baru: Admin), dan **simulasi** (`GET /api/hotspots/{id}/simulation?hours=N`, login, `hours` dibatasi 1–24, default 6; mengembalikan `SimulationDto`). |
-| `AdminEndpoints` | `/api/users`, `/api/users/{id}/toggle-active`, `/api/activity`, `/api/sync`. Semua Admin. Memuat `ActivityRequest`. |
+| `AdminEndpoints` | `/api/users`, `/api/users/{id}/toggle-active`, `/api/activity`, `/api/sync`, `/api/integrations/status` (periksa key FIRMS dan OpenWeather sekarang juga). Semua Admin. Memuat `ActivityRequest`. |
 | `Policies` | Nama kebijakan otorisasi (`Admin`). |
 | `Mappings` | Mengubah entity menjadi DTO (`ToDto()`), termasuk `SimulationResult` → `SimulationDto`. |
 
@@ -116,11 +119,11 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 | `TokenService` | Membuat token JWT (klaim `sub`, `email`, `name`, `role`). Memuat `JwtOptions`. |
 | `Passwords` | Hash dan verifikasi password (PBKDF2 bawaan ASP.NET Identity). |
 | `HotspotService` | Ambil (filter sumber/status), tambah manual, ubah, hapus, dan impor hotspot satelit dengan deduplikasi. |
-| `PredictionService` | Ambil/simpan cuaca per hotspot, hitung dan simpan prediksi. |
+| `PredictionService` | Ambil/simpan cuaca per hotspot (cuaca segar < 60 menit dipakai ulang, yang usang diambil ulang dari OpenWeather; bila gagal, yang tersimpan dipertahankan), hitung dan simpan prediksi. |
 | `FwiPredictionModel` | Rumus prediksi (arah, kecepatan, luas, risiko) dari cuaca. |
 | `FireSpreadSimulator` | **Cellular automata deterministik**: grid sel (±0,56 km), peluang menyala dari kekeringan, suhu, hujan, dan keselarasan dengan arah rambatan (kebalikan arah asal angin; angin tenang merata). `Run()` mengembalikan `SimulationResult` (kondisi, ukuran sel, frame kumulatif per jam, penanda `Truncated`); maksimum 400 sel dan 24 jam. Hasil sama untuk input sama. Detail: [docs/simulasi-api.md](docs/simulasi-api.md). |
 | `UserService` | Daftar pengguna, aktif/nonaktifkan (admin aktif terakhir tidak boleh dinonaktifkan). |
-| `SyncService` | Sinkronisasi: ambil CSV FIRMS dengan retry, impor, cek koneksi cuaca. Satu sync pada satu waktu. |
+| `SyncService` | Sinkronisasi: per sumber FIRMS ambil, urai, impor. Hanya gangguan sementara yang dicoba ulang (jeda berlipat dua); key salah atau batas terlampaui tidak diulang dan menghentikan sumber lain; kegagalan sebagian dilaporkan per sumber. Impor massal (satu query cek duplikat, Id sekaligus). Satu sync pada satu waktu. |
 | `SyncBackgroundService` | Menjalankan `SyncService` berkala. Mati kecuali `Sync:Enabled=true`. |
 | `ActivityLogService` | Catat dan baca log aktivitas ("Admin menambah hotspot ..."). |
 
@@ -145,11 +148,12 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 #### `Integrations/` (panggilan ke luar)
 | Class | Fungsi |
 |---|---|
-| `FirmsClient` | Ambil CSV hotspot NASA FIRMS untuk Indonesia (24 jam terakhir). |
-| `FirmsCsvParser` | Ubah CSV FIRMS menjadi `SatelliteHotspot`. Baris tidak valid dilewati. |
-| `WeatherClient` | OpenWeather bila ada key; bila tidak ada atau gagal, jatuh ke data simulasi. |
+| `FirmsClient` | Ambil CSV hotspot NASA FIRMS per sumber (default tiga satelit VIIRS NRT, Indonesia, 1 hari). Mengklasifikasi error (400 `Invalid MAP_KEY`, 403, 429, 5xx), memastikan isi respons benar-benar CSV, dan menyamarkan key. `CheckConnectionAsync` memakai kotak kecil (1 transaksi). |
+| `FirmsCsvParser` | Ubah CSV FIRMS menjadi `SatelliteHotspot` sesuai dokumentasi atribut: `acq_time` UTC → waktu lokal, `confidence` l/n/h → 30/60/90 (MODIS numerik dipakai apa adanya), kode satelit → nama, batas baris dengan prioritas keyakinan. Baris tidak valid dilewati dan dihitung. |
+| `WeatherClient` | OpenWeather Current Weather (`units=metric`). `TryFetchAsync` mengembalikan null bila tanpa key atau gagal (alasan dicatat); `GetWeatherAsync` jatuh ke data simulasi. Error 401/429/5xx diklasifikasi; key disamarkan. |
 | `GoogleOAuthClient` | Tukar kode Google menjadi identitas terverifikasi. Memuat `GoogleOptions`. |
-| `IntegrationOptions` | Pengaturan FIRMS/OpenWeather (bagian `Integrations`). |
+| `IntegrationOptions` | Pengaturan FIRMS/OpenWeather (bagian `Integrations`): key, sumber, area, rentang hari, batas baris, umur cuaca, percobaan ulang. |
+| `IntegrationException`, `IntegrationStatus` | Jenis kegagalan (`MissingKey`, `InvalidKey`, `RateLimited`, `Unavailable`, `BadResponse`) yang menentukan layak-tidaknya dicoba ulang; status bersama (penjaga satu-sinkronisasi dan alasan kegagalan cuaca terakhir). |
 
 #### `Support/`
 `DotEnv` (baca `.env` dari folder kerja ke atas), `ErrorHandling` (`DomainException` → 400, `AuthException` → 401, format `{ "error": "..." }`).
@@ -176,7 +180,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 `Enums.cs` (`Role`, `HotspotSource`, `HotspotStatus`, `RiskLevel`, `ConnectionState`), `Dtos.cs` (semua DTO dan request/response, termasuk auth, `CoordinateDto`, `SimulationFrameDto`), `Region.cs` (wilayah untuk filter di desktop).
 
 ### 2.4 `Ignis.Tests`
-`DomainTests` (konsep OOP, aturan entity), `ServiceTests` (service di atas EF InMemory), `ParserAndModelTests` (parser FIRMS, model prediksi, cuaca simulasi, `FireSpreadSimulatorTests`), `SimulationTests` (`FireSpreadBehaviorTests`: arah angin, angin tenang, hujan, frame kumulatif, batas jam dan sel; `SimulationApiTests`: endpoint 401/404/200, `hours` dibatasi, hasil stabil), `AuthApiTests` (end-to-end: login, 401/403, registrasi, token rusak), `TestDb` (helper database tes). Jalankan: `dotnet test Ignis.Tests`.
+`DomainTests` (konsep OOP, aturan entity), `ServiceTests` (service di atas EF InMemory), `ParserAndModelTests` (model prediksi, cuaca simulasi, `FireSpreadSimulatorTests`), `IntegrationTests` (parser CSV FIRMS, `FirmsClient`, `WeatherClient`, `SyncService`, kesegaran cuaca, endpoint status integrasi; semua dengan HTTP palsu), `SimulationTests` (`FireSpreadBehaviorTests`: arah angin, angin tenang, hujan, frame kumulatif, batas jam dan sel; `SimulationApiTests`: endpoint 401/404/200, `hours` dibatasi, hasil stabil), `AuthApiTests` (end-to-end: login, 401/403, registrasi, token rusak), `TestDb` (helper database tes). Jalankan: `dotnet test Ignis.Tests`.
 
 ### 2.5 Aturan akses endpoint (ringkas)
 
@@ -184,7 +188,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 |---|---|
 | `/health`, `/api/auth/register`, `/login`, `/google`, `/google/config` | Publik |
 | `GET /api/auth/me`, `GET /api/hotspots*` (termasuk `/simulation`, `/weather`, `/prediction`), `GET /api/predictions` | Pengguna login |
-| `POST/PUT/DELETE /api/hotspots*`, `POST /api/hotspots/{id}/predictions`, `/api/users*`, `/api/activity`, `/api/sync` | Admin |
+| `POST/PUT/DELETE /api/hotspots*`, `POST /api/hotspots/{id}/predictions`, `/api/users*`, `/api/activity`, `/api/sync`, `/api/integrations/status` | Admin |
 
 ---
 

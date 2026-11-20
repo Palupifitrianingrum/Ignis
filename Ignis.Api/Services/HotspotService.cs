@@ -60,22 +60,45 @@ public sealed class HotspotService(AppDbContext db, ActivityLogService log)
         return true;
     }
 
-    /// <summary>Impor hasil parse FIRMS; yang sudah ada (waktu scan dan koordinat sama) dilewati. Mengembalikan jumlah yang baru.</summary>
+    /// <summary>
+    /// Impor hasil parse FIRMS; yang sudah ada (waktu scan dan koordinat sama) dilewati. Mengembalikan jumlah yang baru.
+    /// Satu query untuk memeriksa yang sudah ada, Id diambil sekaligus, dan simpan per kelompok, jadi ribuan baris tidak
+    /// berarti ribuan perjalanan ke database.
+    /// </summary>
     public async Task<int> ImportSatelliteAsync(IEnumerable<SatelliteHotspot> incoming, CancellationToken ct = default)
     {
-        int added = 0;
-        foreach (var h in incoming)
-        {
-            var exists = await db.Hotspots.OfType<SatelliteHotspot>().AnyAsync(x =>
-                x.ScanTime == h.ScanTime && Math.Abs(x.Latitude - h.Latitude) < 1e-5 && Math.Abs(x.Longitude - h.Longitude) < 1e-5, ct);
-            if (exists) continue;
+        var list = incoming.ToList();
+        if (list.Count == 0) return 0;
 
-            h.AssignId(await db.NextIdAsync(IdKind.Hotspot, ct));
-            db.Hotspots.Add(h);
+        // Kunci kesamaan: waktu scan + koordinat dibulatkan 5 desimal (±1 m). Juga membuang duplikat di dalam CSV itu sendiri,
+        // yang akan melanggar indeks unik (detected_at, latitude, longitude) di database.
+        static (long Ticks, long Lat, long Lon) Key(DateTime t, double lat, double lon) =>
+            (t.Ticks, (long)Math.Round(lat * 1e5), (long)Math.Round(lon * 1e5));
+
+        var from = list.Min(h => h.ScanTime);
+        var to = list.Max(h => h.ScanTime);
+        var existing = await db.Hotspots.OfType<SatelliteHotspot>().AsNoTracking()
+            .Where(x => x.ScanTime >= from && x.ScanTime <= to)
+            .Select(x => new { x.ScanTime, x.Latitude, x.Longitude })
+            .ToListAsync(ct);
+        var seen = existing.Select(x => Key(x.ScanTime, x.Latitude, x.Longitude)).ToHashSet();
+
+        var fresh = new List<SatelliteHotspot>();
+        foreach (var h in list)
+            if (seen.Add(Key(h.ScanTime, h.Latitude, h.Longitude))) fresh.Add(h);
+        if (fresh.Count == 0) return 0;
+
+        var ids = await db.NextIdsAsync(IdKind.Hotspot, fresh.Count, ct);
+        for (int i = 0; i < fresh.Count; i++) fresh[i].AssignId(ids[i]);
+
+        const int batch = 500;   // transaksi dibatasi agar tidak membengkak
+        for (int i = 0; i < fresh.Count; i += batch)
+        {
+            db.Hotspots.AddRange(fresh.Skip(i).Take(batch));
             await db.SaveChangesAsync(ct);
-            added++;
         }
-        if (added > 0) await log.AddAsync($"Sync NASA FIRMS: +{added} hotspot baru", ct);
-        return added;
+
+        await log.AddAsync($"Sync NASA FIRMS: +{fresh.Count} hotspot baru", ct);
+        return fresh.Count;
     }
 }

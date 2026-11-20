@@ -10,6 +10,9 @@ using Mapsui.Layers;
 using Mapsui.Limiting;
 using Mapsui.Projections;
 using Mapsui.Styles;
+using Mapsui.Nts;
+using NetTopologySuite.Geometries;
+using Ignis.Frontend.Models;
 using Mapsui.Tiling.Layers;
 using Ignis.Frontend.Models.Admin;
 using Ignis.Frontend.Views.Admin;
@@ -22,11 +25,11 @@ public partial class MapCanvasPlaceholder : UserControl
 {
     private bool _isInitialized;
     private MemoryLayer? _simulationLayer;
+    private MemoryLayer? _simulationOverlayLayer;
     private MemoryLayer? _hotspotLayer;
 
     private static readonly Mapsui.Styles.Color SatelliteColor = new(232, 83, 31);     // #E8531F
     private static readonly Mapsui.Styles.Color ManualColor = new(46, 139, 74);        // #2E8B4A
-    private static readonly Mapsui.Styles.Color SimulationColor = new(249, 115, 22, 110); // Translucent orange
 
     public MapCanvasPlaceholder()
     {
@@ -44,7 +47,7 @@ public partial class MapCanvasPlaceholder : UserControl
 
         if (_currentVm != null)
         {
-            UpdateMapLayers(_currentVm.VisibleHotspots, Array.Empty<CoordinateDto>());
+            UpdateMapLayers(_currentVm.VisibleHotspots, _currentVm.CurrentSimulationState, _currentVm.SimulationHotspotId);
         }
     }
 
@@ -58,8 +61,10 @@ public partial class MapCanvasPlaceholder : UserControl
 
         // 2. Add Simulation & Hotspot Vector Layers
         _simulationLayer = new MemoryLayer { Name = "Simulation", Features = new List<IFeature>(), Style = null };
+        _simulationOverlayLayer = new MemoryLayer { Name = "SimulationOverlay", Features = new List<IFeature>(), Style = null };
         _hotspotLayer = new MemoryLayer { Name = "Hotspots", Features = new List<IFeature>(), Style = null };
         map.Layers.Add(_simulationLayer);
+        map.Layers.Add(_simulationOverlayLayer);
         map.Layers.Add(_hotspotLayer);
 
         // 3. Set Limiter so user cannot pan or zoom outside map extent into empty white space
@@ -113,18 +118,8 @@ public partial class MapCanvasPlaceholder : UserControl
         var mapInfo = e.GetMapInfo(MapControl.Map.Layers);
         if (mapInfo?.Feature?["id"] is string id)
         {
-            var dto = _currentVm.VisibleHotspots.FirstOrDefault(h => h.Id == id);
-            if (dto != null)
-            {
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    var win = new HotspotDetailWindow(new HotspotRow(dto))
-                    {
-                        Owner = Window.GetWindow(this)
-                    };
-                    win.ShowDialog();
-                }));
-            }
+            // Klik pin = simulasikan hotspot itu. Detail hotspot dibuka lewat tombol di panel simulasi.
+            Dispatcher.BeginInvoke(new Action(() => _ = _currentVm.SelectSimulationTargetAsync(id)));
         }
     }
 
@@ -151,7 +146,7 @@ public partial class MapCanvasPlaceholder : UserControl
             _currentVm.LocateMeRequested += OnLocateMeRequested;
             _currentVm.MapDataChanged += UpdateMapLayers;
             _currentVm.FocusLocationRequested += OnFocusLocationRequested;
-            UpdateMapLayers(vm.VisibleHotspots, Array.Empty<CoordinateDto>());
+            UpdateMapLayers(vm.VisibleHotspots, vm.CurrentSimulationState, vm.SimulationHotspotId);
         }
         else
         {
@@ -159,39 +154,116 @@ public partial class MapCanvasPlaceholder : UserControl
         }
     }
 
-    private void UpdateMapLayers(IReadOnlyList<HotspotDto> hotspots, IReadOnlyList<CoordinateDto> burningCells)
-    {
-        if (_hotspotLayer == null || _simulationLayer == null) return;
+    // Warna sel menurut umur api: baru menyala (kuning) -> menengah (oranye) -> lama terbakar (merah tua).
+    private static readonly (double R, double G, double B)[] AgeStops = { (253, 224, 71), (249, 115, 22), (153, 27, 27) };
 
-        var simFeatures = new List<IFeature>(burningCells.Count);
-        foreach (var c in burningCells)
+    private static Mapsui.Styles.Color AgeColor(int age, int currentHour, byte alpha)
+    {
+        double t = currentHour <= 0 ? 0 : Math.Clamp(age / (double)currentHour, 0, 1);
+        double scaled = t * (AgeStops.Length - 1);
+        int i = Math.Min((int)scaled, AgeStops.Length - 2);
+        double f = scaled - i;
+        byte Mix(double a, double b) => (byte)Math.Round(a + (b - a) * f);
+        return new Mapsui.Styles.Color(
+            Mix(AgeStops[i].R, AgeStops[i + 1].R), Mix(AgeStops[i].G, AgeStops[i + 1].G), Mix(AgeStops[i].B, AgeStops[i + 1].B), alpha);
+    }
+
+    private static Polygon CellPolygon(double lat, double lon, double stepDeg)
+    {
+        double h = stepDeg / 2.0;
+        var (x1, y1) = SphericalMercator.FromLonLat(lon - h, lat - h);
+        var (x2, y2) = SphericalMercator.FromLonLat(lon + h, lat + h);
+        return new Polygon(new LinearRing(new[]
         {
-            var (x, y) = SphericalMercator.FromLonLat(c.Longitude, c.Latitude);
-            var f = new PointFeature(new MPoint(x, y));
-            f.Styles.Add(new SymbolStyle
+            new NetTopologySuite.Geometries.Coordinate(x1, y1), new NetTopologySuite.Geometries.Coordinate(x2, y1),
+            new NetTopologySuite.Geometries.Coordinate(x2, y2), new NetTopologySuite.Geometries.Coordinate(x1, y2),
+            new NetTopologySuite.Geometries.Coordinate(x1, y1)
+        }));
+    }
+
+    private static LineString Line(double lat1, double lon1, double lat2, double lon2)
+    {
+        var (x1, y1) = SphericalMercator.FromLonLat(lon1, lat1);
+        var (x2, y2) = SphericalMercator.FromLonLat(lon2, lat2);
+        return new LineString(new[] { new NetTopologySuite.Geometries.Coordinate(x1, y1), new NetTopologySuite.Geometries.Coordinate(x2, y2) });
+    }
+
+    private static GeometryFeature LineFeature(LineString line, Mapsui.Styles.Color color, double width)
+    {
+        var f = new GeometryFeature(line);
+        f.Styles.Add(new VectorStyle { Line = new Pen(color, width) });
+        return f;
+    }
+
+    private void UpdateMapLayers(IReadOnlyList<HotspotDto> hotspots, SimulationMapState? sim, string? selectedId)
+    {
+        if (_hotspotLayer == null || _simulationLayer == null || _simulationOverlayLayer == null) return;
+
+        // 1) Sel api: kotak sesuai grid simulasi, diwarnai menurut umur.
+        var cellFeatures = new List<IFeature>(sim?.Cells.Count ?? 0);
+        if (sim != null)
+        {
+            foreach (var c in sim.Cells)
             {
-                SymbolType = SymbolType.Ellipse,
-                SymbolScale = 0.75,
-                Fill = new Brush(SimulationColor),
-                Outline = new Pen(new Color(220, 38, 38, 160), 1)
-            });
-            simFeatures.Add(f);
+                var f = new GeometryFeature(CellPolygon(c.Latitude, c.Longitude, sim.CellSizeDegrees));
+                f.Styles.Add(new VectorStyle
+                {
+                    Fill = new Brush(AgeColor(c.Age, sim.CurrentHour, 175)),
+                    Outline = new Pen(AgeColor(c.Age, sim.CurrentHour, 235), 0.8)
+                });
+                cellFeatures.Add(f);
+            }
         }
-        _simulationLayer.Features = simFeatures;
+        _simulationLayer.Features = cellFeatures;
         _simulationLayer.DataHasChanged();
 
+        // 2) Penanda titik asal dan panah arah rambatan (panjang tetap dalam jumlah sel, jadi ikut skala peta).
+        var overlay = new List<IFeature>();
+        if (sim != null)
+        {
+            double rad = sim.SpreadDirection * Math.PI / 180.0;
+            double dLat = Math.Cos(rad), dLon = Math.Sin(rad);   // 0 derajat = utara (+lintang), 90 = timur (+bujur)
+            double len = sim.CellSizeDegrees * 5;
+            double tipLat = sim.OriginLatitude + dLat * len, tipLon = sim.OriginLongitude + dLon * len;
+            var arrowColor = new Mapsui.Styles.Color(30, 64, 175);   // biru tua, kontras terhadap sel api
+
+            overlay.Add(LineFeature(Line(sim.OriginLatitude, sim.OriginLongitude, tipLat, tipLon), arrowColor, 3.5));
+            foreach (var spread in new[] { 150.0, -150.0 })   // dua sirip kepala panah
+            {
+                double a = (sim.SpreadDirection + spread) * Math.PI / 180.0;
+                double headLen = sim.CellSizeDegrees * 1.6;
+                overlay.Add(LineFeature(
+                    Line(tipLat, tipLon, tipLat + Math.Cos(a) * headLen, tipLon + Math.Sin(a) * headLen), arrowColor, 3.5));
+            }
+
+            var (ox, oy) = SphericalMercator.FromLonLat(sim.OriginLongitude, sim.OriginLatitude);
+            var origin = new PointFeature(new MPoint(ox, oy));
+            origin.Styles.Add(new SymbolStyle
+            {
+                SymbolType = SymbolType.Ellipse,
+                SymbolScale = 0.5,
+                Fill = new Brush(Mapsui.Styles.Color.White),
+                Outline = new Pen(new Mapsui.Styles.Color(220, 38, 38), 3)
+            });
+            overlay.Add(origin);
+        }
+        _simulationOverlayLayer.Features = overlay;
+        _simulationOverlayLayer.DataHasChanged();
+
+        // 3) Pin hotspot; yang sedang disimulasikan diberi cincin biru dan ukuran lebih besar.
         var hsFeatures = new List<IFeature>(hotspots.Count);
         foreach (var h in hotspots)
         {
             var (x, y) = SphericalMercator.FromLonLat(h.Longitude, h.Latitude);
             var f = new PointFeature(new MPoint(x, y));
             f["id"] = h.Id;
+            bool selected = h.Id == selectedId;
             f.Styles.Add(new SymbolStyle
             {
                 SymbolType = SymbolType.Ellipse,
-                SymbolScale = 0.65,
+                SymbolScale = selected ? 0.95 : 0.65,
                 Fill = new Brush(h.Source == HotspotSource.Manual ? ManualColor : SatelliteColor),
-                Outline = new Pen(Color.White, 2)
+                Outline = selected ? new Pen(new Mapsui.Styles.Color(30, 64, 175), 4) : new Pen(Mapsui.Styles.Color.White, 2)
             });
             hsFeatures.Add(f);
         }

@@ -66,7 +66,32 @@ public sealed record CoordinateDto(double Latitude, double Longitude);
 public sealed record SimulationFrameDto(
     int HourOffset,
     IReadOnlyList<CoordinateDto> BurningCells,
-    double AreaHa);
+    double AreaHa,
+    int NewCells);
+
+/// <summary>Hasil simulasi penyebaran api untuk satu hotspot: kondisi yang dipakai, ukuran sel, dan frame per jam.</summary>
+/// <param name="SpreadDirection">Arah rambatan api (derajat, 0 = utara, 90 = timur).</param>
+/// <param name="WindFromDirection">Arah asal angin (derajat, 270 = angin dari barat).</param>
+/// <param name="WindSpeed">Kecepatan angin (m/s, satuan OpenWeather).</param>
+/// <param name="CellSizeDegrees">Sisi satu sel dalam derajat; sel digambar sebagai kotak [lat ± sisi/2, lon ± sisi/2].</param>
+/// <param name="Truncated">True bila model mencapai batas sel maksimum sehingga luas tidak bertambah lagi.</param>
+public sealed record SimulationDto(
+    string HotspotId,
+    double OriginLatitude,
+    double OriginLongitude,
+    int Hours,
+    double SpreadDirection,
+    double WindFromDirection,
+    double WindSpeed,
+    double Temperature,
+    double Humidity,
+    double Precipitation,
+    string Condition,
+    double CellSizeDegrees,
+    double CellAreaHa,
+    int MaxCells,
+    bool Truncated,
+    IReadOnlyList<SimulationFrameDto> Frames);
 
 // ---------- Pengguna & sinkronisasi ----------
 

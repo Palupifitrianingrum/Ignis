@@ -216,7 +216,10 @@ classDiagram
         class SyncBackgroundService
         class ActivityLogService
         class FwiPredictionModel
-        class FireSpreadSimulator
+        class FireSpreadSimulator {
+            +Run(hotspot, weather, hours) SimulationResult
+            +Simulate(hotspot, weather, hours) IEnumerable~SimulationFrame~
+        }
     }
 
     namespace Integrations {
@@ -238,6 +241,7 @@ classDiagram
     AuthEndpoints --> AuthService
     HotspotEndpoints --> HotspotService
     HotspotEndpoints --> PredictionService
+    HotspotEndpoints --> FireSpreadSimulator
     AdminEndpoints --> UserService
     AdminEndpoints --> SyncService
     AdminEndpoints --> ActivityLogService
@@ -265,7 +269,7 @@ classDiagram
     DatabaseInitializer ..> DemoData
     DemoData ..> Passwords
 
-    note for FireSpreadSimulator "TODO: belum diimplementasikan (stub)"
+    note for FireSpreadSimulator "Cellular automata deterministik: Run() menghasilkan SimulationResult (frame per jam). Lihat docs/simulasi-api.md"
     note for AppDbContext "PostgreSQL atau EF InMemory. Id dibuat dari sequence database."
     note for WeatherClient "OpenWeather bila ada key, selain itu data simulasi"
 ```

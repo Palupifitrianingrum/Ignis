@@ -325,6 +325,17 @@
                 </StackPanel>
             </Border>
 
+            <!-- Bottom-Left: indeks bahaya kebakaran + pemutar simulasi -->
+            <dashboard:FireRiskCard Grid.Row="2"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Bottom"/>
+
+            <!-- Bottom-Right (di samping tombol peta): visualisasi simulasi penyebaran api -->
+            <dashboard:SimulationPanel Grid.Row="2"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Bottom"
+                                       Margin="0,0,64,0"/>
+
             <!-- BOTTOM FLOATING WIDGETS -->
             <!-- Bottom-Right: Map Control Buttons Stack -->
             <dashboard:MapControlsOverlay Grid.Row="2"

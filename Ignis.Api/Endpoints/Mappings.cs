@@ -28,7 +28,15 @@ public static class Mappings
     public static SimulationFrameDto ToDto(this SimulationFrame f) => new(
         f.HourOffset,
         f.BurningCells.Select(c => new CoordinateDto(c.Latitude, c.Longitude)).ToList(),
-        f.AreaHa);
+        f.AreaHa,
+        f.NewCells);
+
+    public static SimulationDto ToDto(this SimulationResult r) => new(
+        r.HotspotId, r.OriginLatitude, r.OriginLongitude, r.Hours,
+        r.SpreadDirection, r.WindFromDirection, r.WindSpeed,
+        r.Temperature, r.Humidity, r.Precipitation, r.Condition,
+        r.CellSizeDegrees, r.CellAreaHa, r.MaxCells, r.Truncated,
+        r.Frames.Select(f => f.ToDto()).ToList());
 
     public static UserDto ToDto(this User u) => new(u.Id, u.Name, u.Email, u.Role, u.IsActive, u.CreatedAt);
 }

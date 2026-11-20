@@ -24,7 +24,6 @@ namespace Ignis.Frontend.ViewModels
 
         private IReadOnlyList<HotspotDto> _allHotspots = Array.Empty<HotspotDto>();
         private IReadOnlyList<PredictionDto> _allPredictions = Array.Empty<PredictionDto>();
-        private IReadOnlyList<SimulationFrameDto> _simulationFrames = Array.Empty<SimulationFrameDto>();
 
         [ObservableProperty]
         private bool isLoggedIn;
@@ -110,25 +109,6 @@ namespace Ignis.Frontend.ViewModels
         [ObservableProperty]
         private int criticalRiskCount = 0;
 
-        // Wind & Smoke Simulation
-        [ObservableProperty]
-        private bool isSimulationPlaying = false;
-
-        [ObservableProperty]
-        private double simulationProgress = 0.0;
-
-        partial void OnSimulationProgressChanged(double value)
-        {
-            UpdateTimeTextFromProgress(value);
-            RaiseMapDataChanged();
-        }
-
-        [ObservableProperty]
-        private string simulationTimeText = "00:00 WIB";
-
-        [ObservableProperty]
-        private string simulationRangeText = "00:00 - 18:00 WIB";
-
         // Map View status
         [ObservableProperty]
         private double currentZoomLevel = 12.0;
@@ -138,7 +118,7 @@ namespace Ignis.Frontend.ViewModels
 
         public IReadOnlyList<HotspotDto> VisibleHotspots { get; private set; } = Array.Empty<HotspotDto>();
 
-        public event Action<IReadOnlyList<HotspotDto>, IReadOnlyList<CoordinateDto>>? MapDataChanged;
+        public event Action<IReadOnlyList<HotspotDto>, SimulationMapState?, string?>? MapDataChanged;
         public event Action<double, double, int>? FocusLocationRequested;
 
         public MainWindowViewModel(IDialogService dialogService, IgnisApiClient api, AdminWorkspace workspace)
@@ -152,7 +132,7 @@ namespace Ignis.Frontend.ViewModels
 
             _simulationTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(400)
+                Interval = TimeSpan.FromMilliseconds(700)
             };
             _simulationTimer.Tick += OnSimulationTick;
 
@@ -162,6 +142,7 @@ namespace Ignis.Frontend.ViewModels
         private void OnWorkspaceChanged()
         {
             if (!_api.IsLoggedIn) return;
+            _simulationCache.Clear();   // hotspot bisa berubah lokasi/cuaca, simulasi lama tidak berlaku lagi
             _allHotspots = _workspace.Hotspots.Select(h => h.Dto).ToList();
             _allPredictions = _workspace.Predictions.Select(p => p.Dto).ToList();
             ApplyFiltersAndRefreshView();
@@ -180,24 +161,13 @@ namespace Ignis.Frontend.ViewModels
                 _allHotspots = await _api.GetHotspotsAsync();
                 _allPredictions = await _api.GetPredictionsAsync();
 
-                var primary = _allHotspots.FirstOrDefault(h => h.Status == HotspotStatus.Active) ?? _allHotspots.FirstOrDefault();
-                if (primary != null)
-                {
-                    try
-                    {
-                        _simulationFrames = await _api.GetSimulationAsync(primary.Id, 18);
-                    }
-                    catch
-                    {
-                        _simulationFrames = Array.Empty<SimulationFrameDto>();
-                    }
-                }
-                else
-                {
-                    _simulationFrames = Array.Empty<SimulationFrameDto>();
-                }
-
                 ApplyFiltersAndRefreshView();
+
+                // Simulasi default: hotspot Active pertama (atau yang pertama), tanpa memutar dan tanpa menggeser peta.
+                // Pilihan pengguna yang masih ada di daftar dipertahankan.
+                var primary = _allHotspots.FirstOrDefault(h => h.Status == HotspotStatus.Active) ?? _allHotspots.FirstOrDefault();
+                if (primary != null && (SimulationHotspotId == null || _allHotspots.All(h => h.Id != SimulationHotspotId)))
+                    await SelectSimulationTargetAsync(primary.Id, autoPlay: false);
             }
             catch
             {
@@ -210,7 +180,7 @@ namespace Ignis.Frontend.ViewModels
         {
             _allHotspots = Array.Empty<HotspotDto>();
             _allPredictions = Array.Empty<PredictionDto>();
-            _simulationFrames = Array.Empty<SimulationFrameDto>();
+            ClearSimulation();
             VisibleHotspots = Array.Empty<HotspotDto>();
 
             TotalMonitoredNodes = 0;
@@ -312,28 +282,15 @@ namespace Ignis.Frontend.ViewModels
             RaiseMapDataChanged();
         }
 
-        private void RaiseMapDataChanged()
-        {
-            IReadOnlyList<CoordinateDto> burning = Array.Empty<CoordinateDto>();
-            if (_simulationFrames.Count > 0 && SimulationProgress > 0)
-            {
-                int targetHour = (int)Math.Round(SimulationProgress);
-                var frame = _simulationFrames
-                    .OrderBy(f => Math.Abs(f.HourOffset - targetHour))
-                    .FirstOrDefault();
-                if (frame != null)
-                {
-                    burning = frame.BurningCells;
-                }
-            }
-            MapDataChanged?.Invoke(VisibleHotspots, burning);
-        }
+        private void RaiseMapDataChanged() =>
+            MapDataChanged?.Invoke(VisibleHotspots, BuildMapState(), SimulationHotspotId);
 
         [RelayCommand]
         private void SelectRecentLocation(RecentLocationItem? item)
         {
             if (item == null) return;
-            FocusLocationRequested?.Invoke(item.Latitude, item.Longitude, 11);
+            FocusLocationRequested?.Invoke(item.Latitude, item.Longitude, 13);   // cukup dekat untuk melihat sel simulasi
+            _ = SelectSimulationTargetAsync(item.Id);   // simulasikan hotspot yang dipilih; tidak melempar
         }
 
         [RelayCommand]
@@ -502,44 +459,6 @@ namespace Ignis.Frontend.ViewModels
             if (IsLast24HoursActive) count++;
             if (IsConservationActive) count++;
             FilterBadgeCount = count;
-        }
-
-        [RelayCommand]
-        private void ToggleSimulation()
-        {
-            IsSimulationPlaying = !IsSimulationPlaying;
-            if (IsSimulationPlaying)
-            {
-                _simulationTimer.Start();
-            }
-            else
-            {
-                _simulationTimer.Stop();
-            }
-        }
-
-        private void OnSimulationTick(object? sender, EventArgs e)
-        {
-            if (SimulationProgress >= 18.0)
-            {
-                SimulationProgress = 0.0;
-            }
-            else
-            {
-                SimulationProgress = Math.Min(18.0, SimulationProgress + 0.5);
-            }
-        }
-
-        private void UpdateTimeTextFromProgress(double hours)
-        {
-            int hour = (int)Math.Floor(hours);
-            int minute = (int)Math.Round((hours - hour) * 60.0);
-            if (minute >= 60)
-            {
-                hour++;
-                minute = 0;
-            }
-            SimulationTimeText = $"{hour:D2}:{minute:D2} WIB";
         }
 
         public event Action? ZoomInRequested;

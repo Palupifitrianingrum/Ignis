@@ -161,8 +161,8 @@ public sealed class IgnisApiClient
     public Task<PredictionDto> PredictAsync(string hotspotId) =>
         SendForAsync<PredictionDto>(HttpMethod.Post, $"api/hotspots/{Uri.EscapeDataString(hotspotId)}/predictions");
 
-    public async Task<IReadOnlyList<SimulationFrameDto>> GetSimulationAsync(string hotspotId, int hours = 18) =>
-        await GetAsync<List<SimulationFrameDto>>($"api/hotspots/{Uri.EscapeDataString(hotspotId)}/simulation?hours={hours}");
+    public Task<SimulationDto> GetSimulationAsync(string hotspotId, int hours = 18) =>
+        GetAsync<SimulationDto>($"api/hotspots/{Uri.EscapeDataString(hotspotId)}/simulation?hours={hours}");
 
     // ================= pengguna (admin) =================
 

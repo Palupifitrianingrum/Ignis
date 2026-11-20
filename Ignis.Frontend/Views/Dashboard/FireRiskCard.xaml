@@ -121,6 +121,9 @@
                            Foreground="#64748B"/>
             </Grid>
 
+            <TextBlock Text="{Binding SimulationTargetText}" FontSize="10.5" Foreground="#64748B"
+                       TextTrimming="CharacterEllipsis" Margin="0,0,0,6"/>
+
             <!-- Timeline Player Row: Play Button + Gradient Slider + Time Text -->
             <Grid VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
@@ -132,6 +135,7 @@
                 <!-- Circular Play/Pause Button -->
                 <Button Grid.Column="0"
                         Command="{Binding ToggleSimulationCommand}"
+                        IsEnabled="{Binding HasSimulation}"
                         Width="28" Height="28"
                         Cursor="Hand"
                         ToolTip="Mulai / Jeda Simulasi">
@@ -193,7 +197,10 @@
                 <!-- Custom Slider -->
                 <Slider Grid.Column="1"
                         Minimum="0"
-                        Maximum="18"
+                        Maximum="{Binding SimulationMaxHours}"
+                        IsSnapToTickEnabled="True"
+                        TickFrequency="1"
+                        IsEnabled="{Binding HasSimulation}"
                         Value="{Binding SimulationProgress, Mode=TwoWay}"
                         VerticalAlignment="Center"
                         Margin="10,0,12,0"

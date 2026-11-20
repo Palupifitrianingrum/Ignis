@@ -122,7 +122,8 @@
             <dashboard:NotificationToast Grid.Row="1" Panel.ZIndex="95" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0"/>
 
             <!-- PROFILE DROPDOWN CARD (Appears below profile icon when logged in & clicked) -->
-            <Border Grid.Row="1"
+            <Border x:Name="ProfileMenuCard"
+                    Grid.Row="1"
                     Panel.ZIndex="90"
                     Visibility="{Binding IsProfileMenuOpen, Converter={StaticResource B2V}}"
                     HorizontalAlignment="Right"

@@ -73,6 +73,9 @@ namespace Ignis.Frontend.ViewModels
         private bool isProfileMenuOpen;
 
         [ObservableProperty]
+        private bool isAdminDashboardOpen;
+
+        [ObservableProperty]
         private string userName = string.Empty;
 
         [ObservableProperty]
@@ -325,8 +328,11 @@ namespace Ignis.Frontend.ViewModels
                 _dialogService.ShowMessage("Panel admin hanya dapat dibuka oleh akun Admin.");
                 return;
             }
-            _dialogService.ShowAdminWindow();
+            IsAdminDashboardOpen = true;
         }
+
+        [RelayCommand]
+        private void BackToMap() => IsAdminDashboardOpen = false;
 
         /// <summary>Samakan tampilan header dan data peta dengan sesi login saat ini.</summary>
         private async void ApplySession()
@@ -334,6 +340,7 @@ namespace Ignis.Frontend.ViewModels
             IsLoggedIn = _api.IsLoggedIn;
             IsAdmin = _api.IsAdmin;
             IsProfileMenuOpen = false;
+            if (!_api.IsAdmin) IsAdminDashboardOpen = false;
             if (_api.CurrentUser is { } user)
             {
                 UserName = user.Name;

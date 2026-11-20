@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Ignis.Frontend"
         xmlns:dashboard="clr-namespace:Ignis.Frontend.Views.Dashboard"
+        xmlns:admin="clr-namespace:Ignis.Frontend.Views.Admin"
         mc:Ignorable="d"
         Title="IGNIS - Wildfire Monitoring &amp; Prediction"
         Height="820" Width="1280"
@@ -360,6 +361,10 @@
         <dashboard:SidebarNav Panel.ZIndex="100"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Stretch"/>
+
+        <!-- Layer 5: Admin Dashboard (navigasi di dalam window yang sama) -->
+        <admin:AdminDashboardView Panel.ZIndex="200"
+                                  Visibility="{Binding IsAdminDashboardOpen, Converter={StaticResource B2V}}"/>
 
     </Grid>
 </Window>

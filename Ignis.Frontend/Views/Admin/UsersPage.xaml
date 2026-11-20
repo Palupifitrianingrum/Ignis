@@ -24,12 +24,13 @@
                             <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*"/>
                             <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="90"/>
                             <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="90"/>
-                            <DataGridTemplateColumn Header="Aksi" Width="170">
+                            <DataGridTemplateColumn Header="Aksi" Width="260">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
                                             <Button Content="Detail" Style="{StaticResource BtnSmall}" Click="Detail_Click"/>
                                             <Button Content="Ubah Status" Margin="6,0,0,0" Style="{StaticResource BtnSmall}" Click="Toggle_Click"/>
+                                            <Button Content="Ubah Role" Margin="6,0,0,0" Style="{StaticResource BtnSmall}" Click="Role_Click"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>

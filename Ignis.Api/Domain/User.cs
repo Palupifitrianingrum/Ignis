@@ -34,7 +34,64 @@ public abstract class User
     public bool IsActive { get; private set; } = true;
 
     public void Activate() => IsActive = true;
-    public void Deactivate() => IsActive = false;
+
+    /// <summary>Nonaktifkan akun. Sekaligus mencabut semua token yang sudah terbit, supaya efeknya langsung (tidak menunggu token kedaluwarsa).</summary>
+    public void Deactivate()
+    {
+        IsActive = false;
+        RevokeTokens();
+    }
+
+    /// <summary>
+    /// Nomor versi token. Setiap token memuat nomor ini; token hanya berlaku bila sama dengan nomor sekarang.
+    /// Menaikkannya (logout, ganti password, nonaktif, ganti role) mencabut semua token lama sekaligus.
+    /// </summary>
+    public int TokenVersion { get; private set; }
+
+    public void RevokeTokens() => TokenVersion++;
+
+    /// <summary>Id akun Google (klaim "sub"): pengenal yang stabil, berbeda dari email yang bisa berubah. Null bila belum tertaut.</summary>
+    public string? GoogleSubject { get; private set; }
+
+    public bool HasPassword => PasswordHash.Length > 0;
+
+    public void LinkGoogle(string subject)
+    {
+        Guard.NotBlank(subject, "Id akun Google tidak boleh kosong.");
+        GoogleSubject = subject;
+    }
+
+    /// <summary>Ganti password. Semua token lama dicabut.</summary>
+    public void ChangePasswordHash(string newHash)
+    {
+        Guard.NotBlank(newHash, "Hash password tidak boleh kosong.");
+        PasswordHash = newHash;
+        RevokeTokens();
+    }
+
+    /// <summary>Hapus password (akun hanya bisa masuk lewat Google). Semua token lama dicabut.</summary>
+    public void ClearPassword()
+    {
+        PasswordHash = string.Empty;
+        RevokeTokens();
+    }
+
+    /// <summary>
+    /// Salinan akun ini dengan role lain (Id, nama, email, password, tautan Google, status, dan tanggal dibuat dipertahankan).
+    /// Dibutuhkan karena Admin dan RegisteredUser adalah tipe berbeda (tabel berbeda): mengubah role = mengganti barisnya.
+    /// Token lama dicabut (versi naik).
+    /// </summary>
+    public User ConvertTo(Role newRole)
+    {
+        User copy = newRole == Role.Admin
+            ? new Admin(Id, Name, Email, PasswordHash, CreatedAt)
+            : new RegisteredUser(Id, Name, Email, PasswordHash, CreatedAt);
+
+        copy.TokenVersion = TokenVersion + 1;
+        copy.GoogleSubject = GoogleSubject;
+        if (!IsActive) copy.IsActive = false;
+        return copy;
+    }
 
     /// <summary>Boleh mengelola (tambah/ubah/hapus) hotspot? (polimorfik)</summary>
     public abstract bool CanManageHotspots { get; }

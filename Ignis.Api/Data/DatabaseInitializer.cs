@@ -29,6 +29,7 @@ public static class DatabaseInitializer
                 await CreateIdSequencesAsync(db, ct);
                 await EnsureAppSettingsTableAsync(db, ct);
                 await EnsureNotificationColumnsAsync(db, ct);
+                await EnsureAuthColumnsAsync(db, ct);
             }
         }
 
@@ -76,6 +77,21 @@ public static class DatabaseInitializer
             "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS distance_km double precision NOT NULL DEFAULT 0",
             "CREATE INDEX IF NOT EXISTS \"IX_notifications_area_id\" ON notifications (area_id)",
             "CREATE INDEX IF NOT EXISTS \"IX_notifications_user_id_created_at\" ON notifications (user_id, created_at)"
+        };
+        foreach (var sql in statements) await db.Database.ExecuteSqlRawAsync(sql, ct);   // semua konstanta, bukan input pengguna
+    }
+
+    /// <summary>
+    /// Kolom autentikasi pada tabel users: nomor versi token (pencabutan token) dan id akun Google. Untuk database yang dibuat sebelumnya
+    /// (EnsureCreated tidak mengubah tabel yang sudah ada). Skema harus sama dengan pemetaan di AppDbContext.
+    /// </summary>
+    private static async Task EnsureAuthColumnsAsync(AppDbContext db, CancellationToken ct)
+    {
+        string[] statements =
+        {
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version integer NOT NULL DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_subject character varying(255) NULL",
+            "CREATE UNIQUE INDEX IF NOT EXISTS \"IX_users_google_subject\" ON users (google_subject) WHERE google_subject IS NOT NULL"
         };
         foreach (var sql in statements) await db.Database.ExecuteSqlRawAsync(sql, ct);   // semua konstanta, bukan input pengguna
     }

@@ -333,6 +333,7 @@ public class IntegrationKeyApiTests : IClassFixture<IntegrationKeyApiTests.Facto
             builder.UseSetting("Storage:Provider", "InMemory");
             builder.UseSetting("Storage:InMemoryName", "kunci-api-" + Guid.NewGuid());
             builder.UseSetting("Jwt:Key", "kunci-rahasia-untuk-tes-minimal-32-karakter!");
+            builder.UseSetting("Auth:RateLimitEnabled", "false");
             builder.ConfigureServices(services =>
             {
                 // Hermetik: tanpa key dari .env, tanpa internet, kunci enkripsi sementara.

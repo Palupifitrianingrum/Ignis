@@ -17,6 +17,8 @@
 --   PREDICTION        -> predictions
 --
 -- Tambahan di luar ERD (dibutuhkan fitur yang sudah ada di aplikasi):
+--   users.token_version     nomor versi token; dinaikkan saat logout/ganti password/role/nonaktif sehingga token lama tidak berlaku
+--   users.google_subject    id akun Google ("sub"), kunci login Google; null bila belum tertaut
 --   users.is_active         status aktif/nonaktif pengguna (halaman Pengguna)
 --   manual_hotspots.note    catatan laporan pada form hotspot manual
 --   activity_log            log aktivitas (halaman Pengguna)
@@ -59,6 +61,8 @@ CREATE TABLE users (
     role character varying(12) NOT NULL,
     created_at timestamp without time zone NOT NULL,
     is_active boolean NOT NULL,
+    token_version integer NOT NULL DEFAULT 0,
+    google_subject character varying(255),
     CONSTRAINT "PK_users" PRIMARY KEY (user_id),
     CONSTRAINT ck_users_role CHECK (role IN ('Admin','Registered'))
 );
@@ -165,6 +169,7 @@ CREATE INDEX "IX_notifications_user_id_is_read" ON notifications (user_id, is_re
 CREATE INDEX "IX_predictions_hotspot_id_created_at" ON predictions (hotspot_id, created_at);
 CREATE INDEX "IX_predictions_weather_id" ON predictions (weather_id);
 CREATE UNIQUE INDEX "IX_users_email" ON users (email);
+CREATE UNIQUE INDEX "IX_users_google_subject" ON users (google_subject) WHERE google_subject IS NOT NULL;
 CREATE INDEX "IX_weather_data_hotspot_id_timestamp" ON weather_data (hotspot_id, timestamp);
 
 -- ---------------------------------------------------------------------

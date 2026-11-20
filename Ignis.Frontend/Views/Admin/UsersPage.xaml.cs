@@ -56,5 +56,16 @@ public partial class UsersPage : UserControl
         var err = await ws.ToggleUserAsync(u.Id);
         if (err != null) MessageBox.Show(err, "Tidak dapat diproses", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
-}
 
+    private async void Role_Click(object sender, RoutedEventArgs e)
+    {
+        if (From(sender) is not { } u) return;
+        var target = u.IsAdmin ? Role.Registered : Role.Admin;
+        var warning = target == Role.Admin
+            ? $"Jadikan {u.Name} ADMIN?\n\nAdmin tidak punya lokasi tersimpan dan notifikasi, sehingga data itu milik {u.Name} akan DIHAPUS. {u.Name} harus login ulang."
+            : $"Turunkan {u.Name} menjadi pengguna terdaftar?\n\n{u.Name} langsung kehilangan akses admin dan harus login ulang.";
+        if (MessageBox.Show(warning, "Konfirmasi ubah role", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        var err = await ws.SetUserRoleAsync(u.Id, target);
+        if (err != null) MessageBox.Show(err, "Tidak dapat diproses", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+}

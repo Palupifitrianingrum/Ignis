@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Ignis.Shared;
 using Ignis.Api.Integrations;
 using Ignis.Api.Services;
@@ -19,6 +20,10 @@ public static class AdminEndpoints
 
         admin.MapPost("/users/{id}/toggle-active", async (string id, UserService svc) =>
             await svc.ToggleActiveAsync(id) is { } error ? Results.BadRequest(new { error }) : Results.NoContent());
+
+        admin.MapPut("/users/{id}/role", async (string id, SetUserRoleRequest req, ClaimsPrincipal me, UserService svc) =>
+            await svc.SetRoleAsync(me.FindFirstValue("sub") ?? string.Empty, id, req.Role) is { } error
+                ? Results.BadRequest(new { error }) : Results.NoContent());
 
         admin.MapGet("/activity", async (ActivityLogService log) => Results.Ok(await log.RecentAsync()));
 

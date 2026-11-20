@@ -42,5 +42,5 @@ public static class Mappings
         r.Frames.Select(f => f.ToDto()).ToList(),
         impacts ?? Array.Empty<AreaImpactDto>());
 
-    public static UserDto ToDto(this User u) => new(u.Id, u.Name, u.Email, u.Role, u.IsActive, u.CreatedAt);
+    public static UserDto ToDto(this User u) => new(u.Id, u.Name, u.Email, u.Role, u.IsActive, u.CreatedAt, u.HasPassword, u.GoogleSubject != null);
 }

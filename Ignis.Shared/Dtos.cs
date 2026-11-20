@@ -111,7 +111,9 @@ public sealed record UserDto(
     string Email,
     Role Role,
     bool IsActive,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool HasPassword = true,
+    bool GoogleLinked = false);
 
 public sealed record SyncResult(
     IReadOnlyList<string> Messages,
@@ -198,6 +200,12 @@ public sealed record RegisterRequest(string Name, string Email, string Password)
 
 /// <summary>Klien mengirim kode otorisasi Google (alur PKCE + loopback); server menukarnya jadi identitas pengguna.</summary>
 public sealed record GoogleLoginRequest(string Code, string CodeVerifier, string RedirectUri);
+
+/// <summary>Ganti password. Untuk akun yang hanya masuk lewat Google (belum punya password), <paramref name="CurrentPassword"/> boleh kosong.</summary>
+public sealed record ChangePasswordRequest(string? CurrentPassword, string NewPassword);
+
+/// <summary>Admin mengubah role pengguna.</summary>
+public sealed record SetUserRoleRequest(Role Role);
 
 /// <summary>Jawaban login/registrasi: token JWT (kirim sebagai "Authorization: Bearer ...") dan profil pengguna.</summary>
 public sealed record AuthResponse(string Token, DateTime ExpiresAt, UserDto User);

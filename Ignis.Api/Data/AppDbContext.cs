@@ -134,6 +134,8 @@ public class AppDbContext : DbContext
             e.Property(x => x.PasswordHash).IsRequired();
             e.Property(x => x.Role).HasConversion<string>().HasMaxLength(12);
             e.HasIndex(x => x.Email).IsUnique();
+            e.Property(x => x.GoogleSubject).HasMaxLength(255);
+            e.HasIndex(x => x.GoogleSubject).IsUnique().HasFilter("google_subject IS NOT NULL");   // satu akun Google = satu akun Ignis
         });
         b.Entity<Admin>().ToTable("admins");
         b.Entity<RegisteredUser>().ToTable("registered_users");

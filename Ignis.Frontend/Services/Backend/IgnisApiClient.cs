@@ -62,18 +62,103 @@ public sealed class IgnisApiClient
     public async Task<UserDto> LoginWithGoogleAsync(string code, string codeVerifier, string redirectUri) =>
         StartSession(await SendForAsync<AuthResponse>(HttpMethod.Post, "api/auth/google", new GoogleLoginRequest(code, codeVerifier, redirectUri)));
 
-    public void Logout() => EndSession();
+    /// <summary>
+    /// Keluar: minta server mencabut semua token akun ini (best-effort, tidak menunggu), lalu akhiri sesi lokal seketika.
+    /// Bila server tidak terjangkau, sesi lokal tetap berakhir dan token lama kedaluwarsa sendiri.
+    /// </summary>
+    public void Logout()
+    {
+        var authorization = _http.DefaultRequestHeaders.Authorization;
+        EndSession();
+        if (authorization == null) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Post, "api/auth/logout");
+                req.Headers.Authorization = authorization;
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+                (await _http.SendAsync(req, cts.Token)).Dispose();
+            }
+            catch (Exception) { /* server tidak terjangkau: token lama habis sendiri */ }
+        });
+    }
+
+    /// <summary>
+    /// Ganti password. Server mencabut semua token lama dan mengembalikan token baru, sehingga sesi di perangkat ini berlanjut.
+    /// <paramref name="currentPassword"/> boleh kosong hanya untuk akun yang belum punya password (masuk lewat Google).
+    /// </summary>
+    public async Task ChangePasswordAsync(string? currentPassword, string newPassword)
+    {
+        var auth = await SendForAsync<AuthResponse>(HttpMethod.Post, "api/auth/change-password", new ChangePasswordRequest(currentPassword, newPassword));
+        ApplyToken(auth);
+    }
+
+    private System.Threading.Timer? _refreshTimer;
+    private System.Threading.SynchronizationContext? _uiContext;
 
     private UserDto StartSession(AuthResponse auth)
     {
-        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
-        CurrentUser = auth.User;
+        _uiContext = System.Threading.SynchronizationContext.Current ?? _uiContext;
+        ApplyToken(auth);
         SessionChanged?.Invoke();
         return auth.User;
     }
 
+    private void ApplyToken(AuthResponse auth)
+    {
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
+        CurrentUser = auth.User;
+        ScheduleRefresh(auth.ExpiresAt);
+    }
+
+    /// <summary>Perbarui token pada ~75% masa berlakunya selama pengguna masih memakai aplikasi (server membatasi total lama sesi).</summary>
+    private void ScheduleRefresh(DateTime expiresAtUtc)
+    {
+        var lifetime = expiresAtUtc.ToUniversalTime() - DateTime.UtcNow;
+        var due = TimeSpan.FromTicks((long)(lifetime.Ticks * 0.75));
+        if (due < TimeSpan.FromSeconds(15)) due = TimeSpan.FromSeconds(15);
+        _refreshTimer?.Dispose();
+        _refreshTimer = new System.Threading.Timer(_ => _ = RefreshAsync(), null, due, System.Threading.Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (!IsLoggedIn) return;
+        try
+        {
+            using var resp = await _http.PostAsync("api/auth/refresh", null);
+            if (resp.IsSuccessStatusCode)
+            {
+                var auth = await resp.Content.ReadFromJsonAsync<AuthResponse>(Json);
+                if (auth != null && IsLoggedIn) { ApplyToken(auth); return; }
+            }
+            else if (resp.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                // Sesi dicabut atau sudah melewati batas lama sesi: kembali ke layar login.
+                RaiseOnUi(EndSession);
+                return;
+            }
+        }
+        catch (Exception) { /* jaringan putus: coba lagi sebentar lagi */ }
+
+        if (IsLoggedIn)
+        {
+            _refreshTimer?.Dispose();
+            _refreshTimer = new System.Threading.Timer(_ => _ = RefreshAsync(), null, TimeSpan.FromSeconds(30), System.Threading.Timeout.InfiniteTimeSpan);
+        }
+    }
+
+    private void RaiseOnUi(Action action)
+    {
+        if (_uiContext != null) _uiContext.Post(_ => action(), null);
+        else action();
+    }
+
     private void EndSession()
     {
+        _refreshTimer?.Dispose();
+        _refreshTimer = null;
         _http.DefaultRequestHeaders.Authorization = null;
         CurrentUser = null;
         SessionChanged?.Invoke();
@@ -222,6 +307,20 @@ public sealed class IgnisApiClient
         catch (BackendException ex) when (ex.InnerException == null)
         {
             return ex.Message;   // pesan aturan bisnis dari server (mis. admin aktif terakhir)
+        }
+    }
+
+    /// <summary>Ganti role pengguna. Mengembalikan pesan error aturan bisnis, atau null bila berhasil.</summary>
+    public async Task<string?> SetUserRoleAsync(string id, Role role)
+    {
+        try
+        {
+            using var _ = await SendAsync(HttpMethod.Put, $"api/users/{Uri.EscapeDataString(id)}/role", new SetUserRoleRequest(role));
+            return null;
+        }
+        catch (BackendException ex) when (ex.InnerException == null)
+        {
+            return ex.Message;
         }
     }
 

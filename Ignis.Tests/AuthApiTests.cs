@@ -20,6 +20,7 @@ public class AuthApiTests : IClassFixture<AuthApiTests.Factory>
             builder.UseSetting("Storage:Provider", "InMemory");
             builder.UseSetting("Storage:InMemoryName", "api-tes-" + Guid.NewGuid());
             builder.UseSetting("Jwt:Key", "kunci-rahasia-untuk-tes-minimal-32-karakter!");
+            builder.UseSetting("Auth:RateLimitEnabled", "false");
         }
     }
 

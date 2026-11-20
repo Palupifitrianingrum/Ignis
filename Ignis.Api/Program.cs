@@ -6,6 +6,8 @@ using Ignis.Api.Endpoints;
 using Ignis.Api.Integrations;
 using Ignis.Api.Services;
 using Ignis.Api.Support;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -36,6 +38,10 @@ else if (jwt.Key.Length < 32)
 builder.Services.AddSingleton(jwt);
 builder.Services.AddSingleton(config.GetSection("Integrations").Get<IntegrationOptions>() ?? new IntegrationOptions());
 builder.Services.AddSingleton(config.GetSection("Google").Get<GoogleOptions>() ?? new GoogleOptions());
+var authOptions = config.GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions();
+builder.Services.AddSingleton(authOptions);
+builder.Services.AddSingleton<LoginThrottle>();
+builder.Services.AddSingleton<IGoogleIdTokenVerifier, GoogleLibraryVerifier>();
 builder.Services.AddSingleton(config.GetSection("Notifications").Get<NotificationOptions>() ?? new NotificationOptions());
 
 // ---- Database: PostgreSQL (Storage:Provider=Postgres) atau InMemory untuk dev/test (default) ----
@@ -64,6 +70,40 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         RoleClaimType = TokenService.RoleClaim,
         ClockSkew = TimeSpan.FromMinutes(1),
     };
+
+    // Token yang tanda tangan dan masa berlakunya sah belum tentu masih boleh dipakai: periksa akun di database.
+    // Akun dihapus/dinonaktifkan, role berubah, atau nomor versi token naik (logout, ganti password) = token ditolak (401).
+    o.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async ctx =>
+        {
+            var principal = ctx.Principal!;
+            var id = principal.FindFirstValue("sub");
+            _ = int.TryParse(principal.FindFirstValue(TokenService.VersionClaim), out var version);
+            var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var current = id == null ? null : await db.Users.AsNoTracking().Where(x => x.Id == id)
+                .Select(x => new { x.IsActive, x.Role, x.TokenVersion }).FirstOrDefaultAsync(ctx.HttpContext.RequestAborted);
+
+            if (current == null || !current.IsActive || current.TokenVersion != version
+                || current.Role.ToString() != principal.FindFirstValue(TokenService.RoleClaim))
+                ctx.Fail("Sesi tidak berlaku lagi.");
+        }
+    };
+});
+
+// Pembatas laju per alamat IP untuk endpoint rawan tebak (login, registrasi, Google, ganti password). Lapisan pertama; kunci per-akun ada di LoginThrottle.
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.OnRejected = async (ctx, ct) =>
+    {
+        ctx.HttpContext.Response.Headers.RetryAfter = "60";
+        await ctx.HttpContext.Response.WriteAsJsonAsync(new { error = "Terlalu banyak permintaan. Coba lagi sebentar lagi." }, ct);
+    };
+    o.AddPolicy("auth", http => authOptions.RateLimitEnabled
+        ? RateLimitPartition.GetFixedWindowLimiter(http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = Math.Max(1, authOptions.RateLimitPerMinute), Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })
+        : RateLimitPartition.GetNoLimiter("off"));
 });
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(Policies.Admin, p => p.RequireRole(nameof(Ignis.Shared.Role.Admin)))
@@ -101,6 +141,7 @@ await DatabaseInitializer.InitializeAsync(app.Services, config);
 await app.Services.GetRequiredService<IntegrationKeyStore>().LoadAsync();   // terapkan override key tersimpan
 
 app.UseDomainErrors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

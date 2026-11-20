@@ -100,6 +100,23 @@ public sealed class AdminWorkspace
     }
 
     // ---------- Pengguna ----------
+    public async Task<string?> SetUserRoleAsync(string id, Ignis.Shared.Role role)
+    {
+        var err = await _backend.SetUserRoleAsync(id, role);
+        await ReloadAsync();
+        return err;
+    }
+
+    /// <summary>Ganti password akun yang sedang login. Pesan error aturan bisnis dikembalikan (null = berhasil).</summary>
+    public async Task<string?> ChangePasswordAsync(string? current, string next)
+    {
+        try { await _backend.ChangePasswordAsync(current, next); return null; }
+        catch (BackendException ex) { return ex.Message; }
+    }
+
+    public bool IsLoggedIn => _backend.IsLoggedIn;
+    public bool HasPassword => _backend.CurrentUser?.HasPassword ?? true;
+
     public async Task<string?> ToggleUserAsync(string id)
     {
         var err = await _backend.ToggleUserAsync(id);

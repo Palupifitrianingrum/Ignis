@@ -14,13 +14,13 @@ public static class AuthEndpoints
 
         // ---- Publik (tanpa token) ----
         auth.MapPost("/register", async (RegisterRequest req, AuthService svc) =>
-            Results.Ok(ToResponse(await svc.RegisterAsync(req)))).AllowAnonymous();
+            Results.Ok(ToResponse(await svc.RegisterAsync(req)))).AllowAnonymous().RequireRateLimiting("auth");
 
         auth.MapPost("/login", async (LoginRequest req, AuthService svc) =>
-            Results.Ok(ToResponse(await svc.LoginAsync(req)))).AllowAnonymous();
+            Results.Ok(ToResponse(await svc.LoginAsync(req)))).AllowAnonymous().RequireRateLimiting("auth");
 
         auth.MapPost("/google", async (GoogleLoginRequest req, AuthService svc) =>
-            Results.Ok(ToResponse(await svc.LoginWithGoogleAsync(req)))).AllowAnonymous();
+            Results.Ok(ToResponse(await svc.LoginWithGoogleAsync(req)))).AllowAnonymous().RequireRateLimiting("auth");
 
         // Client ID bukan rahasia; klien membutuhkannya untuk membuka halaman login Google.
         auth.MapGet("/google/config", (GoogleOAuthClient google) =>
@@ -31,6 +31,22 @@ public static class AuthEndpoints
             await svc.GetByIdAsync(principal.FindFirstValue("sub") ?? string.Empty) is { } u
                 ? Results.Ok(u.ToDto())
                 : Results.Unauthorized()).RequireAuthorization();
+
+        // Akhiri sesi di server: semua token pengguna ini dicabut (bukan hanya dihapus dari aplikasi).
+        auth.MapPost("/logout", async (ClaimsPrincipal principal, AuthService svc) =>
+        {
+            await svc.LogoutAsync(principal.FindFirstValue("sub") ?? string.Empty);
+            return Results.NoContent();
+        }).RequireAuthorization();
+
+        // Perpanjang sesi yang masih sah (dibatasi Jwt:MaxSessionHours sejak login).
+        auth.MapPost("/refresh", async (ClaimsPrincipal principal, AuthService svc) =>
+            Results.Ok(ToResponse(await svc.RefreshAsync(principal.FindFirstValue("sub") ?? string.Empty, TokenService.AuthTimeOf(principal)))))
+            .RequireAuthorization();
+
+        auth.MapPost("/change-password", async (ChangePasswordRequest req, ClaimsPrincipal principal, AuthService svc) =>
+            Results.Ok(ToResponse(await svc.ChangePasswordAsync(principal.FindFirstValue("sub") ?? string.Empty, req))))
+            .RequireAuthorization().RequireRateLimiting("auth");
     }
 
     private static AuthResponse ToResponse(AuthResult r) => new(r.Token, r.ExpiresAt, r.User.ToDto());

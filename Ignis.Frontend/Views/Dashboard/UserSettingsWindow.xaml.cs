@@ -15,6 +15,27 @@ public partial class UserSettingsWindow : Window
         TxtApiUrl.Text = s.ApiBaseUrl;
         PwdCarto.Password = s.CartoKey;
         ChkNotif.IsChecked = s.NotificationsEnabled;
+
+        SecurityCard.Visibility = _ws.IsLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+        var hasPassword = _ws.HasPassword;   // akun Google murni belum punya password: boleh membuat yang pertama
+        LblCurrent.Visibility = PwdCurrent.Visibility = hasPassword ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void ChangePassword_Click(object sender, RoutedEventArgs e)
+    {
+        if (PwdNew.Password != PwdNew2.Password)
+        {
+            MessageBox.Show(this, "Konfirmasi password baru tidak sama.", "Input tidak valid", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        var err = await _ws.ChangePasswordAsync(_ws.HasPassword ? PwdCurrent.Password : null, PwdNew.Password);
+        if (err != null)
+        {
+            MessageBox.Show(this, err, "Password tidak diganti", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        PwdCurrent.Clear(); PwdNew.Clear(); PwdNew2.Clear();
+        MessageBox.Show(this, "Password berhasil diganti.", "Keamanan Akun", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)

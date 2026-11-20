@@ -1029,6 +1029,7 @@ public class IntegrationStatusApiTests : IClassFixture<IntegrationStatusApiTests
             builder.UseSetting("Storage:Provider", "InMemory");
             builder.UseSetting("Storage:InMemoryName", "integrasi-tes-" + Guid.NewGuid());
             builder.UseSetting("Jwt:Key", "kunci-rahasia-untuk-tes-minimal-32-karakter!");
+            builder.UseSetting("Auth:RateLimitEnabled", "false");
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IntegrationOptions>();

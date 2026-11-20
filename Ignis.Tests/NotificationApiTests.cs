@@ -29,6 +29,7 @@ public class NotificationApiTests : IClassFixture<NotificationApiTests.Factory>
             builder.UseSetting("Storage:Provider", "InMemory");
             builder.UseSetting("Storage:InMemoryName", "notif-api-" + Guid.NewGuid());
             builder.UseSetting("Jwt:Key", "kunci-rahasia-untuk-tes-minimal-32-karakter!");
+            builder.UseSetting("Auth:RateLimitEnabled", "false");
             builder.ConfigureServices(services =>
             {
                 // Hermetik: tanpa key dari .env dan tanpa internet (cuaca = data simulasi deterministik per koordinat).

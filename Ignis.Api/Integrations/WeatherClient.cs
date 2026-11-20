@@ -20,10 +20,7 @@ public sealed class WeatherClient(HttpClient http, IntegrationOptions options,
 {
     private const string Provider = "OpenWeather";
 
-    private string ApiKey =>
-        (!string.IsNullOrWhiteSpace(options.WeatherKey)
-            ? options.WeatherKey
-            : Environment.GetEnvironmentVariable("OPENWEATHER_API_KEY") ?? string.Empty).Trim();
+    private string ApiKey => options.EffectiveWeatherKey;
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(ApiKey);
 

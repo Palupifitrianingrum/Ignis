@@ -79,6 +79,7 @@ Dokumentasi: [skema dan ERD](docs/database.md), [fitur untuk tugas OOP](docs/oop
 
 - **Login**: email + password (hash PBKDF2) atau Google. Server menerbitkan token JWT (berlaku 60 menit, `Jwt:ExpiresMinutes`); desktop melampirkannya di setiap permintaan.
 - **Otorisasi**: semua `/api/*` butuh token. Baca data = pengguna mana pun yang login. Tambah/ubah/hapus hotspot, kelola pengguna, log aktivitas, dan sinkronisasi = hanya role `Admin`.
+- **API key layanan luar** (FIRMS, OpenWeather) bisa diganti admin dari halaman Pengaturan: disimpan terenkripsi di server, diuji dulu, dan tidak pernah ditampilkan lagi; key `.env` tetap jadi default ([detail](docs/integrasi-data.md)).
 - **Registrasi publik** selalu menjadi `Registered`, tidak pernah `Admin`. Admin dibuat lewat seed demo atau `Admin__Email`/`Admin__Password`.
 - **Wajib di server sungguhan**: isi `Jwt__Key` (≥ 32 karakter), jangan nyalakan `Storage__SeedDemoData`, dan pasang HTTPS (token dikirim sebagai header, jadi tanpa HTTPS bisa disadap).
 - Batasan yang diketahui: token tidak bisa dicabut sebelum kedaluwarsa (akun yang dinonaktifkan baru tertolak saat login berikutnya), dan belum ada pembatasan percobaan login.

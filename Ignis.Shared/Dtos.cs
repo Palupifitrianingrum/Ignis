@@ -114,6 +114,29 @@ public sealed record SyncResult(
 /// <summary>Status satu layanan luar (hasil pemeriksaan langsung). Pesan tidak pernah memuat API key.</summary>
 public sealed record ProviderStatusDto(string Name, bool KeyConfigured, ConnectionState State, string Message);
 
+/// <summary>
+/// Keadaan API key satu layanan luar untuk halaman Pengaturan. Key lengkap TIDAK PERNAH dikirim ke desktop;
+/// hanya <paramref name="MaskedKey"/> (mis. "••••a3f9"). Prioritas key yang berlaku: override admin, lalu .env, lalu kosong.
+/// </summary>
+/// <param name="Provider">"firms" atau "weather".</param>
+/// <param name="Source">Asal key yang sedang berlaku.</param>
+/// <param name="HasOverride">True bila ada override tersimpan (tombol "Kembalikan ke default" relevan).</param>
+/// <param name="Warning">Peringatan, mis. override tersimpan tetapi tidak dapat dibaca karena kunci enkripsi server berubah.</param>
+public sealed record IntegrationKeyDto(
+    string Provider,
+    string Name,
+    KeySource Source,
+    string? MaskedKey,
+    bool HasOverride,
+    DateTime? UpdatedAt,
+    string? UpdatedBy,
+    string? Warning);
+
+public sealed record SetIntegrationKeyRequest(string Key);
+
+/// <summary>Uji koneksi: <paramref name="Key"/> kosong berarti menguji key yang sedang berlaku.</summary>
+public sealed record TestIntegrationKeyRequest(string? Key);
+
 // ---------- Autentikasi ----------
 
 public sealed record LoginRequest(string Email, string Password);

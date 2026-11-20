@@ -53,6 +53,13 @@ public sealed class IntegrationOptions
     /// <summary>Jeda sebelum percobaan ulang pertama (detik); berlipat dua tiap percobaan berikutnya.</summary>
     public int RetryDelaySeconds { get; set; } = 3;
 
+    /// <summary>Key OpenWeather yang berlaku: <see cref="WeatherKey"/>, atau env OPENWEATHER_API_KEY bila kosong.</summary>
+    public string EffectiveWeatherKey =>
+        (!string.IsNullOrWhiteSpace(WeatherKey) ? WeatherKey : Environment.GetEnvironmentVariable("OPENWEATHER_API_KEY") ?? string.Empty).Trim();
+
+    /// <summary>Salinan terpisah, untuk menguji key kandidat tanpa mengubah pengaturan yang sedang dipakai.</summary>
+    public IntegrationOptions Clone() => (IntegrationOptions)MemberwiseClone();
+
     /// <summary>Daftar sumber FIRMS yang sudah dibersihkan dari spasi, kosong, dan duplikat.</summary>
     public IReadOnlyList<string> FirmsSourceList =>
         FirmsSources.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

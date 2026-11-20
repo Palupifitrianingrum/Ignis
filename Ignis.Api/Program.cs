@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using Ignis.Api.Data;
@@ -71,6 +72,13 @@ builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<FwiPredictionModel>();
 builder.Services.AddSingleton<FireSpreadSimulator>();
 builder.Services.AddSingleton<IntegrationStatus>();   // penjaga satu-sinkronisasi dan status cuaca terakhir
+builder.Services.AddSingleton<IntegrationKeyStore>();   // override API key dari aplikasi (terenkripsi), di atas key .env
+
+// Kunci enkripsi override key. Bawaan: Windows menyimpannya di profil pengguna (bertahan antar-restart). Di Docker/Linux set
+// DataProtection__KeysPath ke folder yang disimpan (volume), kalau tidak override tidak bisa dibaca lagi setelah container diganti.
+var dataProtection = builder.Services.AddDataProtection().SetApplicationName("Ignis");
+if (!string.IsNullOrWhiteSpace(config["DataProtection:KeysPath"]))
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(config["DataProtection:KeysPath"]!));
 // Timeout pendek: sinkronisasi dipicu dari desktop (batas 60 detik). User-Agent generik, tanpa data pengguna.
 builder.Services.AddHttpClient<FirmsClient>(c => { c.Timeout = TimeSpan.FromSeconds(25); c.DefaultRequestHeaders.UserAgent.ParseAdd("Ignis-Api/1.0"); });
 builder.Services.AddHttpClient<WeatherClient>(c => { c.Timeout = TimeSpan.FromSeconds(15); c.DefaultRequestHeaders.UserAgent.ParseAdd("Ignis-Api/1.0"); });
@@ -86,6 +94,7 @@ builder.Services.AddHostedService<SyncBackgroundService>();   // mati kecuali Sy
 var app = builder.Build();
 
 await DatabaseInitializer.InitializeAsync(app.Services, config);
+await app.Services.GetRequiredService<IntegrationKeyStore>().LoadAsync();   // terapkan override key tersimpan
 
 app.UseDomainErrors();
 app.UseAuthentication();
@@ -95,6 +104,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", storage = config["St
 app.MapAuthEndpoints();
 app.MapHotspotEndpoints();
 app.MapAdminEndpoints();
+app.MapSettingsEndpoints();
 
 app.Run();
 

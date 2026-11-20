@@ -1,7 +1,7 @@
 # TODO Ignis
 
 Dokumen kerja untuk tim. Isi: (1) apa yang belum selesai, (2) struktur proyek dan fungsi tiap bagian, (3) langkah mengerjakan dan menyambungkan frontend dengan backend.
-Terakhir diperbarui 2026-11-21 (setelah simulasi api diselesaikan dan dihubungkan ke frontend). Build berhasil dan 179 tes lulus.
+Terakhir diperbarui 2026-11-21 (setelah simulasi api diselesaikan dan dihubungkan ke frontend). Build berhasil dan 226 tes lulus.
 
 Catatan jujur tentang status: "SELESAI" di bawah berarti kodenya ada dan terbaca konsisten, plus lulus tes otomatis bila ada.
 Tampilan dashboard dan simulasi sudah diperiksa dengan menjalankan aplikasi sungguhan terhadap API sungguhan lalu mengambil screenshot jendela (lihat K8). Klik langsung pada pin peta dan alur login/registrasi lewat formulir belum diuji otomasi, jadi butir bertanda "perlu uji GUI" masih harus dicoba manual.
@@ -38,13 +38,15 @@ Legenda: **BE** = `Ignis.Api`, **FE** = `Ignis.Frontend`. Prioritas: P1 = harus 
 | B3 | Notifikasi | P2 | Entity dan tabel ada. Belum ada service, endpoint, dan pengecekan hotspot baru per area. | `Domain/Notification.cs` |
 | B4 | EF Core migration | P2 | Skema dibuat dengan `EnsureCreated`. Perubahan skema tidak bisa di-upgrade dengan aman. | `Data/DatabaseInitializer.cs` |
 | B9 | HTTPS dan konfigurasi deploy | P3 untuk prototipe | Belum ada. Wajib sebelum dipakai di jaringan nyata (token dikirim lewat header). Untuk penilaian lokal (`localhost`) bisa dilewati, tetapi sebutkan di laporan. | — |
-| B5 | Endpoint pengaturan (`/api/settings`) | P3 | API key FIRMS/OpenWeather hanya bisa diisi lewat `.env` server. | — |
+| B5 | Pengaturan API key dari aplikasi | **Selesai**: admin mengganti key FIRMS/OpenWeather dari halaman Pengaturan. Prioritas override > `.env` > kosong; tersimpan terenkripsi (tabel `app_settings`); diuji sebelum disimpan; tidak pernah dikembalikan; berlaku tanpa restart; dicatat di log aktivitas. Endpoint `/api/settings/integrations`. | `Integrations/IntegrationKeyStore.cs`, `Endpoints/SettingsEndpoints.cs` |
 | B6 | Ubah role pengguna (jadikan Admin) | P3 | Belum ada. Sekarang harus ubah langsung di database. | `Services/UserService.cs` |
 | B7 | Pencabutan token / logout sisi server | P3 | Token JWT stateless, berlaku 60 menit. User yang dinonaktifkan baru tertolak saat login berikutnya. | `Services/TokenService.cs` |
 | B8 | Pembatasan percobaan login (rate limiting) | P3 | Belum ada. | `Program.cs` |
 | B10 | Zona waktu | P3 | Semua waktu disimpan sebagai waktu lokal server (`timestamp without time zone`). `acq_time` FIRMS (UTC) kini diubah ke waktu lokal server saat impor, jadi server berzona UTC akan menyimpan UTC. Indonesia punya tiga zona (WIB/WITA/WIT). | `Data/AppDbContext.cs`, `Integrations/FirmsCsvParser.cs` |
-| B12 | Status integrasi di UI | P3 | Server punya `GET /api/integrations/status` (admin), tetapi desktop belum menampilkannya. Tambahkan `IgnisApiClient.GetIntegrationStatusAsync` dan tampilkan di halaman Pengaturan admin (sekaligus menggantikan isian key yang tidak dipakai, F7). | `IgnisApiClient.cs`, `PengaturanPage.xaml.cs` |
+| B12 | Status integrasi di UI | **Selesai** | Tiap editor key menampilkan sumber (override/.env/kosong), key bertopeng, dan tombol **Uji koneksi**. | `IntegrationKeyEditor.xaml.cs` |
 | B13 | Sinkronisasi lama di desktop | P3 | Klien desktop membatasi tiap permintaan 60 detik. Sinkronisasi normal selesai dalam hitungan detik, tetapi bila FIRMS lambat (timeout 25 detik × percobaan ulang) bisa melewatinya; server tetap menyelesaikannya. Bila perlu, jadikan sinkronisasi tugas latar dengan status yang di-poll. | `Services/SyncService.cs` |
+| B14 | Kunci enkripsi override di Docker/Linux | P2 | Kunci Data Protection secara bawaan tersimpan di profil pengguna (Windows). Di container, set `DataProtection__KeysPath` ke volume yang disimpan; bila tidak, override tidak terbaca setelah container diganti (server tetap start dengan key `.env` dan menampilkan peringatan). Masukkan ke `docker-compose`/panduan rilis (Langkah 1). | `Program.cs`, `.env.example` |
+| B15 | Uji `app_settings` di PostgreSQL asli | P2 | Tabel dibuat dengan `CREATE TABLE IF NOT EXISTS` di `DatabaseInitializer` (dan ada di `schema.sql`); belum dijalankan terhadap PostgreSQL sungguhan. Bagian dari K4. | `Data/DatabaseInitializer.cs` |
 
 ### 1.2 Frontend
 
@@ -57,7 +59,7 @@ Legenda: **BE** = `Ignis.Api`, **FE** = `Ignis.Frontend`. Prioritas: P1 = harus 
 | F6 | Saved Locations, area pantauan, notifikasi di UI | P2 | **`SavedLocationsCount` hanya jumlah Recent Locations**, bukan lokasi yang disimpan pengguna. Belum ada UI maupun API area/notifikasi. Menunggu B2, B3. Opsi `NotificationsEnabled` sudah ada di pengaturan tetapi belum ada notifikasinya. | `MainWindowViewModel.cs`, `Views/Dashboard/SidebarNav.xaml` |
 | F4 | Login ulang saat token kedaluwarsa | Selesai, perlu uji GUI | `AdminMainWindow` menutup dirinya dan membuka login saat sesi berakhir; dashboard dikosongkan lewat `ApplySession`. Uji dengan `Jwt:ExpiresMinutes=1`. | `Views/Admin/AdminMainWindow.xaml.cs` |
 | F5 | Tampilan untuk user biasa (`Registered`) | P3 | Tombol Admin disembunyikan lewat `IsAdmin`. User biasa masih bisa melihat peta dan prediksi, itu sudah sesuai. Tinggal uji dengan akun `andi.pratama@example.com`. | `Views/Dashboard/SidebarNav.xaml` |
-| F7 | Halaman Pengaturan admin | P3 | Isian API key FIRMS/weather tersimpan lokal tetapi **tidak dipakai server** (server membaca `.env`). Sambungkan ke B5 atau hapus isiannya. Isian CARTO dan notifikasi kini juga ada di jendela Pengaturan pengguna (duplikat). | `Views/Admin/PengaturanPage.xaml.cs` |
+| F7 | Halaman Pengaturan admin | **Selesai** | Isian key lokal yang tidak dipakai dibuang (beserta endpoint/retry); diganti kartu **API Key Layanan Data** yang terhubung ke server. Key lama di `%AppData%\IgnisAdmin\settings.json` dibuang otomatis saat aplikasi pertama dijalankan. | `Views/Admin/PengaturanPage.xaml`, `Views/Admin/Controls/IntegrationKeyEditor.xaml` |
 | F8 | Alamat API di Pengaturan | Selesai, ada catatan | `UserSettingsWindow` menyimpan `ApiBaseUrl`, tetapi `HttpClient` dibuat sekali saat start (`App.xaml.cs`), jadi **perubahan alamat baru berlaku setelah aplikasi dibuka ulang**, dan env `IGNIS_API_URL` menimpa isian ini. Tambahkan teks "mulai ulang aplikasi" di jendela itu. | `Views/Dashboard/UserSettingsWindow.xaml.cs` |
 
 ### 1.3 Konfigurasi, pengujian, dan kebersihan repo
@@ -87,7 +89,7 @@ Ignis.slnx
 ├── Ignis.Api/          server: logika bisnis, database, login, panggilan ke layanan luar
 ├── Ignis.Frontend/     aplikasi desktop WPF (tampilan saja, data lewat HTTP)
 ├── Ignis.Shared/       kontrak bersama: enum, DTO (bentuk JSON), Region
-├── Ignis.Tests/        unit test dan tes end-to-end (179 tes)
+├── Ignis.Tests/        unit test dan tes end-to-end (226 tes)
 ├── database/schema.sql skrip tabel + sequence Id (dipakai docker-compose)
 ├── docs/               ERD, diagram kelas, fitur OOP, konsep OOP, simulasi api, integrasi data (tutorial key), tutorial Google
 ├── docker-compose.yml  PostgreSQL untuk pengembangan
@@ -109,6 +111,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 | `AuthEndpoints` | `POST /api/auth/register`, `/login`, `/google`; `GET /api/auth/google/config`; `GET /api/auth/me`. Publik kecuali `/me`. |
 | `HotspotEndpoints` | Hotspot (`GET` semua/satu: login; `POST/PUT/DELETE`: Admin), cuaca, prediksi (`GET`: login; `POST` buat baru: Admin), dan **simulasi** (`GET /api/hotspots/{id}/simulation?hours=N`, login, `hours` dibatasi 1–24, default 6; mengembalikan `SimulationDto`). |
 | `AdminEndpoints` | `/api/users`, `/api/users/{id}/toggle-active`, `/api/activity`, `/api/sync`, `/api/integrations/status` (periksa key FIRMS dan OpenWeather sekarang juga). Semua Admin. Memuat `ActivityRequest`. |
+| `SettingsEndpoints` | `GET/PUT/DELETE /api/settings/integrations[/{firms\|weather}]` dan `POST .../test`: kelola override API key. Semua Admin; key lengkap tidak pernah dikembalikan. |
 | `Policies` | Nama kebijakan otorisasi (`Admin`). |
 | `Mappings` | Mengubah entity menjadi DTO (`ToDto()`), termasuk `SimulationResult` → `SimulationDto`. |
 
@@ -154,6 +157,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 | `GoogleOAuthClient` | Tukar kode Google menjadi identitas terverifikasi. Memuat `GoogleOptions`. |
 | `IntegrationOptions` | Pengaturan FIRMS/OpenWeather (bagian `Integrations`): key, sumber, area, rentang hari, batas baris, umur cuaca, percobaan ulang. |
 | `IntegrationException`, `IntegrationStatus` | Jenis kegagalan (`MissingKey`, `InvalidKey`, `RateLimited`, `Unavailable`, `BadResponse`) yang menentukan layak-tidaknya dicoba ulang; status bersama (penjaga satu-sinkronisasi dan alasan kegagalan cuaca terakhir). |
+| `IntegrationKeyStore` | Override API key dari aplikasi di atas key `.env`: simpan terenkripsi (Data Protection) di `app_settings`, terapkan seketika ke `IntegrationOptions`, uji key kandidat dengan salinan opsi, topeng key, dan tangani kunci enkripsi yang berubah. |
 
 #### `Support/`
 `DotEnv` (baca `.env` dari folder kerja ke atas), `ErrorHandling` (`DomainException` → 400, `AuthException` → 401, format `{ "error": "..." }`).
@@ -180,7 +184,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 `Enums.cs` (`Role`, `HotspotSource`, `HotspotStatus`, `RiskLevel`, `ConnectionState`), `Dtos.cs` (semua DTO dan request/response, termasuk auth, `CoordinateDto`, `SimulationFrameDto`), `Region.cs` (wilayah untuk filter di desktop).
 
 ### 2.4 `Ignis.Tests`
-`DomainTests` (konsep OOP, aturan entity), `ServiceTests` (service di atas EF InMemory), `ParserAndModelTests` (model prediksi, cuaca simulasi, `FireSpreadSimulatorTests`), `IntegrationTests` (parser CSV FIRMS, `FirmsClient`, `WeatherClient`, `SyncService`, kesegaran cuaca, endpoint status integrasi; semua dengan HTTP palsu), `SimulationTests` (`FireSpreadBehaviorTests`: arah angin, angin tenang, hujan, frame kumulatif, batas jam dan sel; `SimulationApiTests`: endpoint 401/404/200, `hours` dibatasi, hasil stabil), `AuthApiTests` (end-to-end: login, 401/403, registrasi, token rusak), `TestDb` (helper database tes). Jalankan: `dotnet test Ignis.Tests`.
+`DomainTests` (konsep OOP, aturan entity), `ServiceTests` (service di atas EF InMemory), `ParserAndModelTests` (model prediksi, cuaca simulasi, `FireSpreadSimulatorTests`), `IntegrationTests` (parser CSV FIRMS, `FirmsClient`, `WeatherClient`, `SyncService`, kesegaran cuaca, endpoint status integrasi; semua dengan HTTP palsu), `IntegrationKeyTests` (`IntegrationKeyStore`: prioritas, enkripsi, restart, kunci berubah; endpoint `/api/settings/integrations`: 401/403/404, uji sebelum simpan, key tidak pernah dikembalikan), `SimulationTests` (`FireSpreadBehaviorTests`: arah angin, angin tenang, hujan, frame kumulatif, batas jam dan sel; `SimulationApiTests`: endpoint 401/404/200, `hours` dibatasi, hasil stabil), `AuthApiTests` (end-to-end: login, 401/403, registrasi, token rusak), `TestDb` (helper database tes). Jalankan: `dotnet test Ignis.Tests`.
 
 ### 2.5 Aturan akses endpoint (ringkas)
 
@@ -188,7 +192,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 |---|---|
 | `/health`, `/api/auth/register`, `/login`, `/google`, `/google/config` | Publik |
 | `GET /api/auth/me`, `GET /api/hotspots*` (termasuk `/simulation`, `/weather`, `/prediction`), `GET /api/predictions` | Pengguna login |
-| `POST/PUT/DELETE /api/hotspots*`, `POST /api/hotspots/{id}/predictions`, `/api/users*`, `/api/activity`, `/api/sync`, `/api/integrations/status` | Admin |
+| `POST/PUT/DELETE /api/hotspots*`, `POST /api/hotspots/{id}/predictions`, `/api/users*`, `/api/activity`, `/api/sync`, `/api/integrations/status`, `/api/settings/integrations*` | Admin |
 
 ---
 

@@ -182,6 +182,24 @@ public sealed class IgnisApiClient
         }
     }
 
+    // ================= API key layanan luar (admin) =================
+
+    /// <summary>Keadaan key FIRMS dan OpenWeather: asal (override/.env/kosong) dan versi bertopeng. Key lengkap tidak pernah dikirim ke sini.</summary>
+    public async Task<IReadOnlyList<IntegrationKeyDto>> GetIntegrationKeysAsync() =>
+        await GetAsync<List<IntegrationKeyDto>>("api/settings/integrations");
+
+    /// <summary>Ganti key ("firms" atau "weather"). Server mengujinya dulu; melempar <see cref="BackendException"/> bila gagal diuji.</summary>
+    public Task<IntegrationKeyDto> SetIntegrationKeyAsync(string provider, string key) =>
+        SendForAsync<IntegrationKeyDto>(HttpMethod.Put, $"api/settings/integrations/{Uri.EscapeDataString(provider)}", new SetIntegrationKeyRequest(key));
+
+    /// <summary>Buang override sehingga key .env berlaku lagi.</summary>
+    public Task<IntegrationKeyDto> ResetIntegrationKeyAsync(string provider) =>
+        SendForAsync<IntegrationKeyDto>(HttpMethod.Delete, $"api/settings/integrations/{Uri.EscapeDataString(provider)}");
+
+    /// <summary>Uji key tanpa menyimpannya; <paramref name="key"/> null menguji key yang sedang berlaku.</summary>
+    public Task<ProviderStatusDto> TestIntegrationKeyAsync(string provider, string? key) =>
+        SendForAsync<ProviderStatusDto>(HttpMethod.Post, $"api/settings/integrations/{Uri.EscapeDataString(provider)}/test", new TestIntegrationKeyRequest(key));
+
     // ================= log & sinkronisasi (admin) =================
 
     public async Task<IReadOnlyList<string>> GetActivitiesAsync() => await GetAsync<List<string>>("api/activity");

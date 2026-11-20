@@ -73,6 +73,34 @@ Hasil yang diharapkan bila kedua key valid: `state: "Connected"` untuk keduanya.
 
 Pemeriksaan FIRMS memakai kotak kecil (±22 km di Riau, 1 hari) sehingga hanya memakai 1 transaksi dan hampir tanpa data.
 
+### Mengganti key dari aplikasi (admin)
+
+Admin bisa mengganti key tanpa menyentuh file `.env`: buka panel admin, **Pengaturan**, kartu **API Key Layanan Data**. Aturannya:
+
+| Hal | Perilaku |
+|---|---|
+| Prioritas key yang berlaku | **override dari aplikasi > key di `.env` > kosong** |
+| Mengisi key baru | Menggantikan key yang berlaku. Key `.env` **tidak diubah atau dihapus**; tetap jadi default. |
+| Kolom dibiarkan kosong | Tidak mengubah apa pun (tombol **Simpan key** nonaktif) |
+| **Kembalikan ke default** | Membuang override sehingga key `.env` berlaku lagi (tombol hanya muncul bila ada override) |
+| **Uji koneksi** | Menguji key yang diketik, atau key yang sedang berlaku bila kolom kosong, tanpa menyimpan |
+| Saat **Simpan key** | Server menguji key dulu; hanya disimpan bila valid. Key yang gagal tidak pernah menimpa key yang sedang jalan. |
+| Berlaku kapan | Seketika, tanpa restart server |
+| Siapa | Hanya admin (pengguna biasa mendapat 403). Key milik server dan dipakai semua pengguna. |
+
+Keamanan:
+- Key disimpan **terenkripsi** (ASP.NET Data Protection) di tabel `app_settings`, tidak pernah dalam teks biasa.
+- Key lengkap **tidak pernah dikirim balik** ke aplikasi; yang tampil hanya versi bertopeng, mis. `••••a3f9`.
+- Penggantian dan pengembalian dicatat di log aktivitas (siapa dan kapan, **tanpa nilai key**).
+- Isian key lokal yang dulu ada di halaman Pengaturan (tersimpan sebagai teks biasa di `%AppData%\IgnisAdmin\settings.json`) sudah dihapus, dan aplikasi membuang key lama dari file itu saat pertama dijalankan.
+
+Yang perlu diketahui operator server:
+- **Kunci enkripsi**: Windows menyimpannya di profil pengguna sehingga bertahan antar-restart. Di Docker/Linux set `DataProtection__KeysPath` ke folder yang disimpan (volume); bila tidak, override tidak bisa dibaca lagi setelah container diganti. Bila itu terjadi, server tetap start dengan key `.env` dan halaman Pengaturan menampilkan peringatan; isi ulang key atau klik **Kembalikan ke default**.
+- Dengan penyimpanan **InMemory**, override hilang saat server berhenti (ikut data lainnya). Dengan PostgreSQL override bertahan.
+- Tabel `app_settings` dibuat otomatis (juga untuk database PostgreSQL yang sudah ada).
+
+API: `GET /api/settings/integrations`, `PUT|DELETE /api/settings/integrations/{firms|weather}`, `POST /api/settings/integrations/{firms|weather}/test` (semua admin).
+
 ---
 
 ## 3. Cara kerjanya
@@ -162,9 +190,9 @@ Semua opsional; default sudah wajar. Ditulis sebagai `Integrations__NamaOpsi` di
 
 ## 6. Pengujian
 
-`dotnet test Ignis.Tests --filter "FirmsCsvParserTests|FirmsClientTests|WeatherClientTests|SyncServiceTests|WeatherFreshnessTests|IntegrationStatusApiTests"`
+`dotnet test Ignis.Tests --filter "FirmsCsvParserTests|FirmsClientTests|WeatherClientTests|SyncServiceTests|WeatherFreshnessTests|IntegrationStatusApiTests|IntegrationKeyStoreTests|IntegrationKeyApiTests"`
 
-Semua tes memakai HTTP palsu (tanpa key dan tanpa internet; fixture parser memuat baris FIRMS nyata yang teramati) dan membuktikan antara lain: urutan path URL sesuai dokumentasi, `acq_time` UTC bergeser tepat sebesar offset zona lokal, kategori confidence, error 400/401/403/429/5xx diklasifikasi benar, key salah tidak diulang, gangguan sementara diulang lalu berhasil, HTTP 200 berisi HTML dianggap error, key tidak pernah muncul di pesan, impor idempoten, 3000 baris diimpor cepat, cuaca segar dipakai ulang dan yang usang diambil ulang, serta endpoint status hanya untuk admin.
+Semua tes memakai HTTP palsu (tanpa key dan tanpa internet; fixture parser memuat baris FIRMS nyata yang teramati) dan membuktikan antara lain: urutan path URL sesuai dokumentasi, `acq_time` UTC bergeser tepat sebesar offset zona lokal, kategori confidence, error 400/401/403/429/5xx diklasifikasi benar, key salah tidak diulang, gangguan sementara diulang lalu berhasil, HTTP 200 berisi HTML dianggap error, key tidak pernah muncul di pesan, impor idempoten, 3000 baris diimpor cepat, cuaca segar dipakai ulang dan yang usang diambil ulang, endpoint status hanya untuk admin, serta override key: prioritas override > `.env`, terenkripsi di database, tidak pernah dikembalikan, diuji sebelum disimpan, key gagal tidak menimpa key yang jalan, bertahan setelah restart, dan tidak bisa dibaca bila kunci enkripsi berubah.
 
 Dengan **key sungguhan** (2026-11-21), lihat bagian berikutnya. Terhadap server sungguhan dengan **key palsu** (tanpa data pribadi): FIRMS menjawab 400 `Invalid MAP_KEY.` dan OpenWeather 401; Ignis menampilkan pesan yang jelas, tidak mengulang, simulasi tetap berjalan dengan cuaca simulasi, dan log bersih dari key.
 
@@ -184,6 +212,7 @@ Dijalankan terhadap FIRMS dan OpenWeather sungguhan (penyimpanan di memori, jadi
 | Cuaca OpenWeather | suhu 29,7 °C, RH 66%, angin 2,45 m/s dari 157°, hujan 0,1 mm, kondisi "hujan rintik-rintik" (bahasa Indonesia dari `lang=id`) |
 | Simulasi dengan cuaca nyata | `condition` bukan "Simulasi"; angin dari 157° → api merambat ke 337° |
 | Log server | 0 baris memuat key |
+| Override key dari aplikasi desktop (halaman Pengaturan) | Key salah ditolak server (`Invalid MAP_KEY`) tanpa menimpa key yang jalan; key sungguhan lolos uji dan tersimpan sebagai override; "Kembalikan ke default" kembali ke `.env`; 0 peringatan binding |
 
 ## Yang belum terbukti
 

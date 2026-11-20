@@ -24,7 +24,11 @@ public static class DatabaseInitializer
         if (!postgres || config.GetValue("Storage:AutoCreate", true))
         {
             await db.Database.EnsureCreatedAsync(ct);
-            if (postgres) await CreateIdSequencesAsync(db, ct);
+            if (postgres)
+            {
+                await CreateIdSequencesAsync(db, ct);
+                await EnsureAppSettingsTableAsync(db, ct);
+            }
         }
 
         if (config.GetValue("Storage:SeedDemoData", !postgres)) await SeedAsync(db, log, ct);
@@ -40,6 +44,18 @@ public static class DatabaseInitializer
             await db.Database.ExecuteSqlRawAsync(sql, ct);
         }
     }
+
+    /// <summary>
+    /// Tabel app_settings (override key). EnsureCreated tidak menambah tabel ke database yang sudah ada, jadi dibuat di sini bila belum ada
+    /// (sampai migration, TODO B4). Skema harus sama dengan pemetaan AppSetting di AppDbContext.
+    /// </summary>
+    private static Task EnsureAppSettingsTableAsync(AppDbContext db, CancellationToken ct) =>
+        db.Database.ExecuteSqlRawAsync(
+            "CREATE TABLE IF NOT EXISTS app_settings (" +
+            "setting_key character varying(100) NOT NULL PRIMARY KEY, " +
+            "value text NOT NULL, " +
+            "updated_at timestamp without time zone NOT NULL, " +
+            "updated_by character varying(254) NULL)", ct);
 
     private static async Task SeedAsync(AppDbContext db, ILogger log, CancellationToken ct)
     {

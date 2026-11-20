@@ -162,3 +162,15 @@ CREATE SEQUENCE IF NOT EXISTS ignis_hotspot_seq START 1000;
 CREATE SEQUENCE IF NOT EXISTS ignis_weather_seq START 1000;
 CREATE SEQUENCE IF NOT EXISTS ignis_prediction_seq START 1000;
 CREATE SEQUENCE IF NOT EXISTS ignis_user_seq START 1000;
+
+-- ---------------------------------------------------------------------
+-- Pengaturan server yang diubah lewat aplikasi (saat ini: override API key FIRMS/OpenWeather).
+-- Kolom value SELALU terenkripsi (ASP.NET Data Protection), tidak pernah teks biasa.
+-- Ignis.Api juga membuatnya (IF NOT EXISTS) saat start, termasuk di database lama yang dibuat sebelum tabel ini ada.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_settings (
+    setting_key character varying(100) NOT NULL PRIMARY KEY,
+    value text NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    updated_by character varying(254) NULL
+);

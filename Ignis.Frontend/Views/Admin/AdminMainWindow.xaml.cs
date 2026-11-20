@@ -60,8 +60,7 @@ public partial class AdminMainWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show(this,
-                ex.Message + "\n\nJalankan Ignis.Api (dotnet run --project Ignis.Api) lalu buka ulang halaman ini,\n" +
-                "atau pakai mode demo: set environment IGNIS_BACKEND=Demo.",
+                ex.Message + "\n\nJalankan Ignis.Api (dotnet run --project Ignis.Api) lalu buka ulang halaman ini.",
                 "Backend tidak terhubung", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }

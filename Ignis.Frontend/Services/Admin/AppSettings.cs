@@ -6,22 +6,15 @@ using System.Text.Json.Serialization;
 namespace Ignis.Frontend.Services.Admin;
 
 /// <summary>
-/// Pengaturan lokal aplikasi desktop (disimpan di %AppData%\IgnisAdmin\settings.json).
-/// Catatan: kunci/endpoint FIRMS dan weather, serta retry, sekarang dibaca SERVER dari konfigurasinya sendiri
-/// (Integrations__* di .env server), bukan dari sini — isian di halaman Pengaturan belum dipakai siapa pun.
-/// TODO(backend): sediakan GET/PUT /api/settings (admin) atau hapus isian itu dari halaman Pengaturan.
-/// Yang memang lokal: ApiBaseUrl, CartoKey, dan preferensi UI.
+/// Pengaturan lokal aplikasi desktop (disimpan di %AppData%\IgnisAdmin\settings.json): alamat API, interval sinkronisasi, key peta CARTO,
+/// dan preferensi UI. API key FIRMS/OpenWeather TIDAK disimpan di sini: keduanya milik server dan diatur admin lewat
+/// halaman Pengaturan (disimpan terenkripsi di server). Versi lama menyimpannya di file ini dalam teks biasa;
+/// <see cref="Load"/> membuangnya dari disk.
 /// </summary>
 public class AppSettings
 {
     public int IntervalIndex { get; set; } = 0; // 0:1 jam, 1:3 jam, 2:6 jam, 3:12 jam
-    public string FirmsEndpoint { get; set; } = "https://firms.modaps.eosdis.nasa.gov/api/area/csv";
-    public string FirmsKey { get; set; } = string.Empty;
-    public string WeatherEndpoint { get; set; } = "https://api.openweathermap.org/data/2.5/weather";
-    public string WeatherKey { get; set; } = string.Empty;
     public string CartoKey { get; set; } = string.Empty;   // API key basemap CARTO (opsional)
-    public int RetryCount { get; set; } = 3;
-    public int RetryDelayMinutes { get; set; } = 5;
     public bool NotificationsEnabled { get; set; } = true;
 
     /// <summary>Alamat dasar Ignis.Api. Env IGNIS_API_URL menimpa (berguna untuk menunjuk ke server tanpa mengubah file).</summary>
@@ -47,7 +40,15 @@ public class AppSettings
         try
         {
             if (File.Exists(FilePath))
-                return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new();
+            {
+                var text = File.ReadAllText(FilePath);
+                var settings = JsonSerializer.Deserialize<AppSettings>(text) ?? new();
+
+                // File dari versi lama memuat API key layanan luar dalam teks biasa. Tulis ulang tanpa kunci itu.
+                if (text.Contains("FirmsKey", StringComparison.OrdinalIgnoreCase) || text.Contains("WeatherKey", StringComparison.OrdinalIgnoreCase))
+                    settings.Save();
+                return settings;
+            }
         }
         catch { }
         return new();

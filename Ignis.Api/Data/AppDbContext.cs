@@ -13,6 +13,18 @@ public class ActivityLogEntry
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>
+/// Pengaturan server yang diubah lewat aplikasi (tabel app_settings), saat ini hanya override API key layanan luar.
+/// <see cref="Value"/> SELALU terenkripsi (ASP.NET Data Protection), tidak pernah teks biasa.
+/// </summary>
+public class AppSetting
+{
+    public string Key { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    public DateTime UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public enum IdKind { Hotspot, Weather, Prediction, User }
 
 /// <summary>
@@ -33,6 +45,7 @@ public class AppDbContext : DbContext
     public DbSet<MonitoringArea> MonitoringAreas => Set<MonitoringArea>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ActivityLogEntry> ActivityLog => Set<ActivityLogEntry>();
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
     // ---------------- Id berformat "PREFIX-0001" ----------------
 
@@ -226,6 +239,15 @@ public class AppDbContext : DbContext
             e.ToTable("activity_log");
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.CreatedAt);
+        });
+
+        b.Entity<AppSetting>(e =>
+        {
+            e.ToTable("app_settings");
+            e.HasKey(x => x.Key);
+            e.Property(x => x.Key).HasColumnName("setting_key").HasMaxLength(100);
+            e.Property(x => x.Value).IsRequired();
+            e.Property(x => x.UpdatedBy).HasMaxLength(254);
         });
 
         ApplySnakeCaseColumns(b);

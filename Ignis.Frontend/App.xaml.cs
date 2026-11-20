@@ -35,7 +35,22 @@ public partial class App : Application
 
         base.OnStartup(e);
 
+        // Wajib login/daftar terlebih dahulu sebelum membuka jendela utama.
+        // Set OnExplicitShutdown sementara agar aplikasi tidak otomatis keluar saat LoginView ditutup.
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        var dialogService = Services.GetRequiredService<IDialogService>();
+        var api = Services.GetRequiredService<IgnisApiClient>();
+
+        if (dialogService.ShowLoginDialog() != true || !api.IsLoggedIn)
+        {
+            Shutdown();
+            return;
+        }
+
         var mainWindow = Services.GetRequiredService<MainWindow>();
+        MainWindow = mainWindow;
+        ShutdownMode = ShutdownMode.OnLastWindowClose;
         mainWindow.Show();
     }
 

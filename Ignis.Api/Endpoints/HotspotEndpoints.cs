@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Ignis.Api.Services;
 using Ignis.Shared;
 
@@ -19,14 +20,22 @@ public static class HotspotEndpoints
             await svc.GetByIdAsync(id) is { } h ? Results.Ok(h.ToDto()) : Results.NotFound());
 
         // Fitur utama tugas OOP: tambah hotspot manual (lihat HotspotService.AddManualAsync + hierarki Hotspot).
-        admin.MapPost("/hotspots/manual", async (ManualHotspotRequest req, HotspotService svc) =>
+        // Setelah hotspot manual ditambah/diubah, lokasi pengguna di sekitarnya langsung diperiksa (notifikasi).
+        admin.MapPost("/hotspots/manual", async (ManualHotspotRequest req, HotspotService svc,
+                                                 NotificationService notifications, ILogger<NotificationService> log) =>
         {
             var saved = await svc.AddManualAsync(req);
+            await NotificationEndpoints.TryEvaluateAsync(() => notifications.EvaluateHotspotAsync(saved.Id), log);
             return Results.Created($"/api/hotspots/{saved.Id}", saved.ToDto());
         });
 
-        admin.MapPut("/hotspots/{id}", async (string id, ManualHotspotRequest req, HotspotService svc) =>
-            Results.Ok((await svc.UpdateManualAsync(id, req)).ToDto()));
+        admin.MapPut("/hotspots/{id}", async (string id, ManualHotspotRequest req, HotspotService svc,
+                                              NotificationService notifications, ILogger<NotificationService> log) =>
+        {
+            var updated = await svc.UpdateManualAsync(id, req);
+            await NotificationEndpoints.TryEvaluateAsync(() => notifications.EvaluateHotspotAsync(updated.Id), log);
+            return Results.Ok(updated.ToDto());
+        });
 
         admin.MapDelete("/hotspots/{id}", async (string id, HotspotService svc) =>
             await svc.DeleteAsync(id) ? Results.NoContent() : Results.NotFound());
@@ -46,12 +55,25 @@ public static class HotspotEndpoints
 
         // Simulasi penyebaran api (cellular automata). Untuk semua pengguna yang login. `hours` dibatasi 1..24 (default 6).
         // Memakai cuaca terakhir yang tersimpan untuk hotspot itu (diambil dulu bila belum ada), jadi hasilnya stabil antar-panggilan.
-        api.MapGet("/hotspots/{id}/simulation", async (string id, int? hours, HotspotService hs, PredictionService ps, FireSpreadSimulator sim) =>
+        api.MapGet("/hotspots/{id}/simulation", async (string id, int? hours, ClaimsPrincipal user, HotspotService hs, PredictionService ps,
+                                                       FireSpreadSimulator sim, MonitoringAreaService areas) =>
         {
             if (await hs.GetByIdAsync(id) is not { } h) return Results.NotFound();
             var weather = await ps.GetWeatherAsync(h);
             var hoursClamped = Math.Clamp(hours ?? 6, 1, FireSpreadSimulator.MaxHours);
-            return Results.Ok(sim.Run(h, weather, hoursClamped).ToDto());
+            var result = sim.Run(h, weather, hoursClamped);
+
+            // Dampak pada lokasi tersimpan pengguna yang melihat (hanya untuk pengguna terdaftar): api/asap mencapai radius lokasi?
+            var impacts = new List<AreaImpactDto>();
+            if (user.IsInRole(nameof(Role.Registered)) && user.FindFirstValue("sub") is { } userId)
+            {
+                foreach (var a in await areas.GetForUserAsync(userId))
+                {
+                    var e = ExposureEvaluator.Evaluate(result, a.Latitude, a.Longitude, a.Radius, result.Hours);
+                    impacts.Add(new AreaImpactDto(a.Id, a.Name, e.HotspotDistanceKm, e.FireEtaHours, e.FireMinDistanceKm, e.SmokeMaxLevel, e.SmokeEtaHours));
+                }
+            }
+            return Results.Ok(result.ToDto(impacts));
         });
     }
 }

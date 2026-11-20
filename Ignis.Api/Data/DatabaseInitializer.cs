@@ -28,6 +28,7 @@ public static class DatabaseInitializer
             {
                 await CreateIdSequencesAsync(db, ct);
                 await EnsureAppSettingsTableAsync(db, ct);
+                await EnsureNotificationColumnsAsync(db, ct);
             }
         }
 
@@ -56,6 +57,28 @@ public static class DatabaseInitializer
             "value text NOT NULL, " +
             "updated_at timestamp without time zone NOT NULL, " +
             "updated_by character varying(254) NULL)", ct);
+
+    /// <summary>
+    /// Kolom tambahan untuk lokasi tersimpan dan notifikasi (titik pusat lokasi; jenis, tingkat, perkiraan waktu, dan jarak pada notifikasi).
+    /// EnsureCreated tidak mengubah tabel yang sudah ada, jadi kolom ditambahkan di sini bila belum ada (sampai migration, TODO B4).
+    /// Skema harus sama dengan pemetaan di AppDbContext. Nilai bawaan hanya untuk baris lama; baris baru selalu diisi aplikasi.
+    /// </summary>
+    private static async Task EnsureNotificationColumnsAsync(AppDbContext db, CancellationToken ct)
+    {
+        string[] statements =
+        {
+            "ALTER TABLE monitoring_areas ADD COLUMN IF NOT EXISTS latitude double precision NOT NULL DEFAULT 0",
+            "ALTER TABLE monitoring_areas ADD COLUMN IF NOT EXISTS longitude double precision NOT NULL DEFAULT 0",
+            "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS area_id character varying(40) NULL REFERENCES monitoring_areas (area_id) ON DELETE CASCADE",
+            "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS kind character varying(10) NOT NULL DEFAULT 'Fire'",
+            "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS level integer NOT NULL DEFAULT 1",
+            "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS eta_hours integer NOT NULL DEFAULT 0",
+            "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS distance_km double precision NOT NULL DEFAULT 0",
+            "CREATE INDEX IF NOT EXISTS \"IX_notifications_area_id\" ON notifications (area_id)",
+            "CREATE INDEX IF NOT EXISTS \"IX_notifications_user_id_created_at\" ON notifications (user_id, created_at)"
+        };
+        foreach (var sql in statements) await db.Database.ExecuteSqlRawAsync(sql, ct);   // semua konstanta, bukan input pengguna
+    }
 
     private static async Task SeedAsync(AppDbContext db, ILogger log, CancellationToken ct)
     {

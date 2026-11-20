@@ -1,7 +1,7 @@
 # TODO Ignis
 
 Dokumen kerja untuk tim. Isi: (1) apa yang belum selesai, (2) struktur proyek dan fungsi tiap bagian, (3) langkah mengerjakan dan menyambungkan frontend dengan backend.
-Terakhir diperbarui 2026-11-21 (setelah simulasi api diselesaikan dan dihubungkan ke frontend). Build berhasil dan 226 tes lulus.
+Terakhir diperbarui 2026-11-21 (setelah simulasi api diselesaikan dan dihubungkan ke frontend). Build berhasil dan 376 tes lulus.
 
 Catatan jujur tentang status: "SELESAI" di bawah berarti kodenya ada dan terbaca konsisten, plus lulus tes otomatis bila ada.
 Tampilan dashboard dan simulasi sudah diperiksa dengan menjalankan aplikasi sungguhan terhadap API sungguhan lalu mengambil screenshot jendela (lihat K8). Klik langsung pada pin peta dan alur login/registrasi lewat formulir belum diuji otomasi, jadi butir bertanda "perlu uji GUI" masih harus dicoba manual.
@@ -34,8 +34,8 @@ Legenda: **BE** = `Ignis.Api`, **FE** = `Ignis.Frontend`. Prioritas: P1 = harus 
 |---|---|---|---|---|
 | B11 | **Paket rilis untuk penilaian** | P1 | Belum ada. Penilai menerima .exe desktop dan backend untuk dijalankan sendiri, dengan PostgreSQL dan semua key dari Anda. Pilihan: PostgreSQL online (Neon/Supabase) atau PostgreSQL portable yang dijalankan `.bat` (tanpa Docker). Lihat Langkah 1. | — |
 | B1 | Simulasi penyebaran api | **Selesai** | Cellular automata deterministik; arah angin diperbaiki (sebelumnya terbalik: api merambat ke arah asal angin); angin tenang merata; laju dikalibrasi; batas 400 sel dilaporkan (`truncated`); luas sel dikoreksi menurut lintang. Endpoint `GET /api/hotspots/{id}/simulation` mengembalikan kondisi cuaca, arah, ukuran sel, dan frame per jam. Tes perilaku dan endpoint lulus. Keterbatasan yang disengaja (tanpa data lahan/medan) tercatat di dokumen simulasi. | `Services/FireSpreadSimulator.cs`, `Ignis.Tests/SimulationTests.cs` |
-| B2 | Area pantauan | P2 | Entity dan tabel ada. Belum ada service dan endpoint. | `Domain/MonitoringArea.cs` |
-| B3 | Notifikasi | P2 | Entity dan tabel ada. Belum ada service, endpoint, dan pengecekan hotspot baru per area. | `Domain/Notification.cs` |
+| B2 | Lokasi tersimpan (area pantauan) | **Selesai** | Titik + radius 1–50 km, batas 10 per pengguna; hanya pemilik; CRUD `/api/monitoring-areas`; langsung memeriksa dampak saat dibuat/diubah. Dokumentasi: [docs/notifikasi.md](docs/notifikasi.md). | `Domain/MonitoringArea.cs`, `Services/MonitoringAreaService.cs` |
+| B3 | Notifikasi api dan asap | **Selesai** | Simulasi kandidat hotspot terdekat per gugus, nilai apakah api/asap mencapai radius lokasi, tingkat 1–3, tanpa pengiriman berulang (jeda 6 jam, naik tingkat tetap dikirim). Dipicu sinkronisasi, hotspot manual, perubahan lokasi, dan "Periksa sekarang". Model asap ditambahkan ke simulasi. | `Services/NotificationService.cs`, `ExposureEvaluator.cs`, `SmokePlumeModel.cs` |
 | B4 | EF Core migration | P2 | Skema dibuat dengan `EnsureCreated`. Perubahan skema tidak bisa di-upgrade dengan aman. | `Data/DatabaseInitializer.cs` |
 | B9 | HTTPS dan konfigurasi deploy | P3 untuk prototipe | Belum ada. Wajib sebelum dipakai di jaringan nyata (token dikirim lewat header). Untuk penilaian lokal (`localhost`) bisa dilewati, tetapi sebutkan di laporan. | — |
 | B5 | Pengaturan API key dari aplikasi | **Selesai**: admin mengganti key FIRMS/OpenWeather dari halaman Pengaturan. Prioritas override > `.env` > kosong; tersimpan terenkripsi (tabel `app_settings`); diuji sebelum disimpan; tidak pernah dikembalikan; berlaku tanpa restart; dicatat di log aktivitas. Endpoint `/api/settings/integrations`. | `Integrations/IntegrationKeyStore.cs`, `Endpoints/SettingsEndpoints.cs` |
@@ -47,6 +47,11 @@ Legenda: **BE** = `Ignis.Api`, **FE** = `Ignis.Frontend`. Prioritas: P1 = harus 
 | B13 | Sinkronisasi lama di desktop | P3 | Klien desktop membatasi tiap permintaan 60 detik. Sinkronisasi normal selesai dalam hitungan detik, tetapi bila FIRMS lambat (timeout 25 detik × percobaan ulang) bisa melewatinya; server tetap menyelesaikannya. Bila perlu, jadikan sinkronisasi tugas latar dengan status yang di-poll. | `Services/SyncService.cs` |
 | B14 | Kunci enkripsi override di Docker/Linux | P2 | Kunci Data Protection secara bawaan tersimpan di profil pengguna (Windows). Di container, set `DataProtection__KeysPath` ke volume yang disimpan; bila tidak, override tidak terbaca setelah container diganti (server tetap start dengan key `.env` dan menampilkan peringatan). Masukkan ke `docker-compose`/panduan rilis (Langkah 1). | `Program.cs`, `.env.example` |
 | B15 | Uji `app_settings` di PostgreSQL asli | P2 | Tabel dibuat dengan `CREATE TABLE IF NOT EXISTS` di `DatabaseInitializer` (dan ada di `schema.sql`); belum dijalankan terhadap PostgreSQL sungguhan. Bagian dari K4. | `Data/DatabaseInitializer.cs` |
+| B16 | Notifikasi otomatis tanpa pemicu manual | P2 | Notifikasi hotspot satelit baru hanya dibuat saat sinkronisasi berjalan. Aktifkan `Sync__Enabled=true` (sinkronisasi terjadwal) agar otomatis; tanpa itu hanya muncul lewat pemicu manual. Pertimbangkan pemeriksaan berkala sendiri bila sinkronisasi jarang. | `SyncBackgroundService`, `NotificationService` |
+| B17 | Notifikasi di luar aplikasi | P3 | Tidak ada push saat aplikasi tertutup, email, atau SMS; notifikasi tampil saat aplikasi berjalan (polling 60 detik). | `MainWindowViewModel.Notifications.cs` |
+| B18 | Uji `AR-`/`NT-` dan `ALTER TABLE` di PostgreSQL asli | P2 | Sequence baru dan penambahan kolom untuk database lama belum dijalankan terhadap PostgreSQL sungguhan. Bagian dari K4. | `Data/DatabaseInitializer.cs` |
+| B19 | Realisme asap | P3 | Model tidak memakai jenis lahan (gambut menghasilkan jauh lebih banyak asap), inversi atmosfer, atau data kualitas udara; ambang level adalah indeks relatif. Kalibrasi dengan data PM2.5 nyata bila ada. | `Services/SmokePlumeModel.cs` |
+| B20 | Admin tanpa lokasi/notifikasi | P3 | Sesuai ERD hanya pengguna terdaftar yang punya lokasi dan notifikasi. Bila admin juga perlu, ubah FK `monitoring_areas`/`notifications` dari `registered_users` ke `users`. | `Data/AppDbContext.cs` |
 
 ### 1.2 Frontend
 
@@ -56,7 +61,8 @@ Legenda: **BE** = `Ignis.Api`, **FE** = `Ignis.Frontend`. Prioritas: P1 = harus 
 | F2 | Simulasi di dashboard | Selesai | Klik pin peta atau item Recent Locations memilih target; hasil diputar otomatis, digambar sebagai kotak sel berwarna menurut umur api, plus panel visualisasi. Memilih hotspot lain menghapus hasil lama; pilihan baru membatalkan permintaan yang tertunda; error server ditampilkan di panel. | `ViewModels/MainWindowViewModel.Simulation.cs`, `Views/Dashboard/SimulationPanel.xaml`, `MapCanvasPlaceholder.xaml.cs` |
 | F9 | Pesan error saat API tidak terjangkau | P2 | `LoadDashboardDataAsync` menelan semua error dan hanya mengosongkan data, jadi pengguna melihat dashboard kosong tanpa tahu sebabnya. Tampilkan pesan ("Server tidak terjangkau") dan tombol coba lagi. | `MainWindowViewModel.cs` |
 | F10 | Uji klik pin peta | P3 | Klik pin memanggil `SelectSimulationTargetAsync` (jalur kode sama dengan Recent Locations yang sudah diuji lewat screenshot), tetapi klik langsung pada peta Mapsui belum diuji otomasi. Coba manual: klik pin, panel dan sel muncul; klik pin lain, hasil berganti. | `MapCanvasPlaceholder.xaml.cs` (`OnMapInfo`) |
-| F6 | Saved Locations, area pantauan, notifikasi di UI | P2 | **`SavedLocationsCount` hanya jumlah Recent Locations**, bukan lokasi yang disimpan pengguna. Belum ada UI maupun API area/notifikasi. Menunggu B2, B3. Opsi `NotificationsEnabled` sudah ada di pengaturan tetapi belum ada notifikasinya. | `MainWindowViewModel.cs`, `Views/Dashboard/SidebarNav.xaml` |
+| F11 | Uji klik peta untuk memilih lokasi | P3 | Mode pilih titik (banner, Esc, dialog, `CompletePick`) tersambung, tetapi klik peta Mapsui belum diuji otomasi; lewat ketikan koordinat sudah teruji. Coba manual: Tambah → Pilih titik langsung di peta → klik peta. | `MapCanvasPlaceholder.xaml.cs` (`OnMapInfo`) |
+| F6 | Lokasi tersimpan, notifikasi, dan asap di UI | **Selesai** | Sidebar "Lokasi Saya" (tambah/ubah/hapus, pilih titik di peta, status dampak), penanda dan cincin radius di peta, lonceng + panel + banner, asap digambar di bawah api, dan legenda. Admin tidak mendapat fitur ini (ERD). | `ViewModels/MainWindowViewModel.Locations.cs`, `.Notifications.cs`, `Views/Dashboard/*` |
 | F4 | Login ulang saat token kedaluwarsa | Selesai, perlu uji GUI | `AdminMainWindow` menutup dirinya dan membuka login saat sesi berakhir; dashboard dikosongkan lewat `ApplySession`. Uji dengan `Jwt:ExpiresMinutes=1`. | `Views/Admin/AdminMainWindow.xaml.cs` |
 | F5 | Tampilan untuk user biasa (`Registered`) | P3 | Tombol Admin disembunyikan lewat `IsAdmin`. User biasa masih bisa melihat peta dan prediksi, itu sudah sesuai. Tinggal uji dengan akun `andi.pratama@example.com`. | `Views/Dashboard/SidebarNav.xaml` |
 | F7 | Halaman Pengaturan admin | **Selesai** | Isian key lokal yang tidak dipakai dibuang (beserta endpoint/retry); diganti kartu **API Key Layanan Data** yang terhubung ke server. Key lama di `%AppData%\IgnisAdmin\settings.json` dibuang otomatis saat aplikasi pertama dijalankan. | `Views/Admin/PengaturanPage.xaml`, `Views/Admin/Controls/IntegrationKeyEditor.xaml` |
@@ -89,9 +95,9 @@ Ignis.slnx
 ├── Ignis.Api/          server: logika bisnis, database, login, panggilan ke layanan luar
 ├── Ignis.Frontend/     aplikasi desktop WPF (tampilan saja, data lewat HTTP)
 ├── Ignis.Shared/       kontrak bersama: enum, DTO (bentuk JSON), Region
-├── Ignis.Tests/        unit test dan tes end-to-end (226 tes)
+├── Ignis.Tests/        unit test dan tes end-to-end (376 tes)
 ├── database/schema.sql skrip tabel + sequence Id (dipakai docker-compose)
-├── docs/               ERD, diagram kelas, fitur OOP, konsep OOP, simulasi api, integrasi data (tutorial key), tutorial Google
+├── docs/               ERD, diagram kelas, fitur OOP, konsep OOP, simulasi api, notifikasi, integrasi data (tutorial key), tutorial Google
 ├── docker-compose.yml  PostgreSQL untuk pengembangan
 └── .env.example        daftar pengaturan server (salin ke .env)
 ```
@@ -110,6 +116,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 |---|---|
 | `AuthEndpoints` | `POST /api/auth/register`, `/login`, `/google`; `GET /api/auth/google/config`; `GET /api/auth/me`. Publik kecuali `/me`. |
 | `HotspotEndpoints` | Hotspot (`GET` semua/satu: login; `POST/PUT/DELETE`: Admin), cuaca, prediksi (`GET`: login; `POST` buat baru: Admin), dan **simulasi** (`GET /api/hotspots/{id}/simulation?hours=N`, login, `hours` dibatasi 1–24, default 6; mengembalikan `SimulationDto`). |
+| `NotificationEndpoints` | `/api/monitoring-areas` (CRUD lokasi tersimpan), `/api/notifications` (daftar, dibaca, hapus, `check`) untuk pengguna terdaftar; `POST /api/notifications/evaluate` untuk admin. Id milik orang lain dijawab 404. |
 | `AdminEndpoints` | `/api/users`, `/api/users/{id}/toggle-active`, `/api/activity`, `/api/sync`, `/api/integrations/status` (periksa key FIRMS dan OpenWeather sekarang juga). Semua Admin. Memuat `ActivityRequest`. |
 | `SettingsEndpoints` | `GET/PUT/DELETE /api/settings/integrations[/{firms\|weather}]` dan `POST .../test`: kelola override API key. Semua Admin; key lengkap tidak pernah dikembalikan. |
 | `Policies` | Nama kebijakan otorisasi (`Admin`). |
@@ -124,7 +131,11 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 | `HotspotService` | Ambil (filter sumber/status), tambah manual, ubah, hapus, dan impor hotspot satelit dengan deduplikasi. |
 | `PredictionService` | Ambil/simpan cuaca per hotspot (cuaca segar < 60 menit dipakai ulang, yang usang diambil ulang dari OpenWeather; bila gagal, yang tersimpan dipertahankan), hitung dan simpan prediksi. |
 | `FwiPredictionModel` | Rumus prediksi (arah, kecepatan, luas, risiko) dari cuaca. |
-| `FireSpreadSimulator` | **Cellular automata deterministik**: grid sel (±0,56 km), peluang menyala dari kekeringan, suhu, hujan, dan keselarasan dengan arah rambatan (kebalikan arah asal angin; angin tenang merata). `Run()` mengembalikan `SimulationResult` (kondisi, ukuran sel, frame kumulatif per jam, penanda `Truncated`); maksimum 400 sel dan 24 jam. Hasil sama untuk input sama. Detail: [docs/simulasi-api.md](docs/simulasi-api.md). |
+| `FireSpreadSimulator` | **Cellular automata deterministik**: grid sel (±0,56 km), peluang menyala dari kekeringan, suhu, hujan, dan keselarasan dengan arah rambatan (kebalikan arah asal angin; angin tenang merata). `Run()` mengembalikan `SimulationResult` (kondisi, ukuran sel, frame kumulatif per jam, asap per jam, penanda `Truncated`); maksimum 400 sel dan 24 jam. Hasil sama untuk input sama. Detail: [docs/simulasi-api.md](docs/simulasi-api.md). |
+| `SmokePlumeModel` | **Sebaran asap** adveksi–difusi pada grid kasar 0,025°: emisi dari sel api, terbawa angin, menyebar, meluruh (lebih cepat saat hujan). Mengeluarkan sel asap level 1–3 per jam. Detail: [docs/notifikasi.md](docs/notifikasi.md#3-model-asap). |
+| `ExposureEvaluator`, `Geo` | Menilai apakah api/asap hasil simulasi mencapai radius sebuah lokasi dan kapan (fungsi murni); jarak haversine, jarak ke sel, dan nama arah mata angin. |
+| `MonitoringAreaService` | Lokasi tersimpan pengguna: daftar, tambah (batas 10), ubah, hapus beserta notifikasinya; semua dibatasi pada pemiliknya. |
+| `NotificationService` | Pemeriksaan dampak: pilih kandidat hotspot per gugus, simulasikan, nilai dampak, buat notifikasi tingkat 1–3 tanpa pengiriman berulang; daftar/tandai dibaca/hapus milik pengguna. Satu putaran pada satu waktu. |
 | `UserService` | Daftar pengguna, aktif/nonaktifkan (admin aktif terakhir tidak boleh dinonaktifkan). |
 | `SyncService` | Sinkronisasi: per sumber FIRMS ambil, urai, impor. Hanya gangguan sementara yang dicoba ulang (jeda berlipat dua); key salah atau batas terlampaui tidak diulang dan menghentikan sumber lain; kegagalan sebagian dilaporkan per sumber. Impor massal (satu query cek duplikat, Id sekaligus). Satu sync pada satu waktu. |
 | `SyncBackgroundService` | Menjalankan `SyncService` berkala. Mati kecuali `Sync:Enabled=true`. |
@@ -137,7 +148,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 | `SatelliteHotspot`, `ManualHotspot` | Turunan `Hotspot`. Satelit tidak bisa diubah/hapus; manual bisa (`UpdateReport`). |
 | `User` (abstrak), `Admin`, `RegisteredUser` | Pengguna. `CanManageHotspots` polimorfik. Status aktif lewat `Activate()/Deactivate()`. |
 | `WeatherData`, `Prediction` | Cuaca di sekitar hotspot dan hasil prediksi. |
-| `MonitoringArea`, `Notification` | Belum dipakai endpoint (lihat B2, B3). |
+| `MonitoringArea`, `Notification` | Lokasi tersimpan (titik + radius km, kotak min/max dihitung otomatis, setter privat, validasi di konstruktor) dan notifikasi (jenis Fire/Smoke, tingkat 1–3, perkiraan jam tiba, jarak). |
 | `DomainException`, `Guard` | Pelanggaran aturan bisnis (HTTP 400) dan pemeriksaan invarian bersama (`Guard` bersifat `internal`). |
 | `Coordinate`, `Vector` | Value object. |
 
@@ -171,8 +182,8 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 | `Services/Admin/AdminWorkspace` | Cache data (hotspot, prediksi, pengguna, aktivitas) sebagai baris tampilan, plus event perubahan. Dashboard utama juga mendengarkan event ini. |
 | `Services/Admin/AppSettings` | Pengaturan lokal di `%AppData%\IgnisAdmin\settings.json` (alamat API, interval, key CARTO). |
 | `ViewModels/Auth/*` | `LoginFormViewModel`, `RegisterViewModel`, `LoginWindowViewModel`: logika layar login/registrasi. |
-| `ViewModels/MainWindowViewModel` (+ `.Simulation.cs`) | Dashboard peta utama: login/logout, menu profil, gerbang panel admin (`IsAdmin`), data dashboard dari API (angka risiko, hotspot terlihat, Recent Locations, status darurat). File `.Simulation.cs` memuat logika simulasi: memilih target, memuat dari API, memutar per jam, umur tiap sel, teks panel, dan data grafik. |
-| `Views/Dashboard/*` | Peta utama (`MapCanvasPlaceholder`, Mapsui; sel simulasi digambar sebagai poligon menurut umur, panah arah rambatan, sorotan pin terpilih), `FireRiskCard` (angka risiko + pemutar simulasi, kiri-bawah), `SimulationPanel` (kompas, luas, grafik, legenda, kanan-bawah), sidebar dengan menu profil dan Logout, pencarian, dan `UserSettingsWindow`. |
+| `ViewModels/MainWindowViewModel` (+ `.Simulation.cs`, `.Locations.cs`, `.Notifications.cs`) | Dashboard peta utama: login/logout, menu profil, gerbang panel admin, data dashboard dari API. `.Simulation.cs`: simulasi (target, pemutar, umur sel, asap, grafik). `.Locations.cs`: lokasi tersimpan (daftar, dialog tambah/ubah, pilih titik di peta, status dampak). `.Notifications.cs`: lonceng, polling 60 detik, panel, banner. |
+| `Views/Dashboard/*` | Peta utama (`MapCanvasPlaceholder`, Mapsui: sel api menurut umur, **asap** abu-abu di bawahnya, panah arah rambatan, penanda dan cincin radius lokasi tersimpan, sorotan pin), `FireRiskCard`, `SimulationPanel` (kompas, luas, asap, grafik, legenda), sidebar (`SidebarNav` + `SavedLocationsSection`), `NotificationBell`, `NotificationPanel`, `NotificationToast` (banner dan petunjuk memilih titik), `SavedLocationWindow` (dialog lokasi), dan `UserSettingsWindow`. |
 | `Views/Admin/*` | Halaman admin: Dashboard, Kelola Hotspot, Semua Hotspot, Hotspot Manual, Riwayat, Pengguna, Pengaturan, form dan detail hotspot. `AdminMainWindow` menutup diri dan membuka login saat sesi berakhir. |
 | `Views/Auth/*`, `Views/Shared/*` | Layar login/registrasi dan kontrol bersama. |
 | `Models/Admin/Rows.cs` | Pembungkus DTO untuk tampilan (`HotspotRow`, `PredictionRow`, `UserRow`). |
@@ -184,7 +195,7 @@ Titik masuk. Hanya merangkai: baca konfigurasi, daftarkan layanan (termasuk `Fir
 `Enums.cs` (`Role`, `HotspotSource`, `HotspotStatus`, `RiskLevel`, `ConnectionState`), `Dtos.cs` (semua DTO dan request/response, termasuk auth, `CoordinateDto`, `SimulationFrameDto`), `Region.cs` (wilayah untuk filter di desktop).
 
 ### 2.4 `Ignis.Tests`
-`DomainTests` (konsep OOP, aturan entity), `ServiceTests` (service di atas EF InMemory), `ParserAndModelTests` (model prediksi, cuaca simulasi, `FireSpreadSimulatorTests`), `IntegrationTests` (parser CSV FIRMS, `FirmsClient`, `WeatherClient`, `SyncService`, kesegaran cuaca, endpoint status integrasi; semua dengan HTTP palsu), `IntegrationKeyTests` (`IntegrationKeyStore`: prioritas, enkripsi, restart, kunci berubah; endpoint `/api/settings/integrations`: 401/403/404, uji sebelum simpan, key tidak pernah dikembalikan), `SimulationTests` (`FireSpreadBehaviorTests`: arah angin, angin tenang, hujan, frame kumulatif, batas jam dan sel; `SimulationApiTests`: endpoint 401/404/200, `hours` dibatasi, hasil stabil), `AuthApiTests` (end-to-end: login, 401/403, registrasi, token rusak), `TestDb` (helper database tes). Jalankan: `dotnet test Ignis.Tests`.
+`DomainTests` (konsep OOP, aturan entity), `ServiceTests` (service di atas EF InMemory), `ParserAndModelTests` (model prediksi, cuaca simulasi, `FireSpreadSimulatorTests`), `IntegrationTests` (parser CSV FIRMS, `FirmsClient`, `WeatherClient`, `SyncService`, kesegaran cuaca, endpoint status integrasi; semua dengan HTTP palsu), `SmokeModelTests` (model asap), `NotificationTests` (entitas lokasi/notifikasi, `Geo`, `ExposureEvaluator`, `NotificationService`, `MonitoringAreaService`, hook sinkronisasi), `NotificationApiTests` (endpoint lokasi/notifikasi, otorisasi, isolasi, dampak pada simulasi), `IntegrationKeyTests` (`IntegrationKeyStore`: prioritas, enkripsi, restart, kunci berubah; endpoint `/api/settings/integrations`: 401/403/404, uji sebelum simpan, key tidak pernah dikembalikan), `SimulationTests` (`FireSpreadBehaviorTests`: arah angin, angin tenang, hujan, frame kumulatif, batas jam dan sel; `SimulationApiTests`: endpoint 401/404/200, `hours` dibatasi, hasil stabil), `AuthApiTests` (end-to-end: login, 401/403, registrasi, token rusak), `TestDb` (helper database tes). Jalankan: `dotnet test Ignis.Tests`.
 
 ### 2.5 Aturan akses endpoint (ringkas)
 
@@ -246,6 +257,7 @@ Jalankan API lalu desktop, dan centang satu per satu:
 - [ ] Login admin: angka risiko, pin peta, dan Recent Locations terisi dan sama dengan isi tabel `hotspots`/`predictions`.
 - [ ] Login user biasa (`andi.pratama@example.com`): dashboard terisi, tombol Admin tidak tampil.
 - [ ] Tombol Admin (akun admin): panel admin terbuka; akun biasa mendapat pesan penolakan.
+- [ ] Notifikasi (F11): login `andi.pratama@example.com`, **+ Tambah** lokasi dekat hotspot, pastikan lonceng bertambah, banner muncul, klik notifikasi memusatkan peta; logout mengosongkan lonceng.
 - [ ] Simulasi: klik pin hotspot (F10). Panel muncul, sel terbakar membesar di peta saat play, warna dari kuning ke merah tua, panah biru searah rambatan.
 - [ ] Klik pin lain: hasil lama hilang dan berganti; klik **Lihat detail hotspot** membuka detail.
 - [ ] Tutup panel (tombol ✕): sel dan panah hilang dari peta.
@@ -259,13 +271,9 @@ Jalankan API lalu desktop, dan centang satu per satu:
 Sudah dikerjakan dan dijelaskan di [docs/simulasi-api.md](docs/simulasi-api.md): model, rumus, konvensi arah angin, bentuk respons, tampilan, dan daftar tes.
 Pengembangan lanjutan (opsional, di luar lingkup tugas): tipe lahan/bahan bakar, medan (kemiringan), cuaca yang berubah tiap jam (prakiraan), dan pemilihan hotspot dari daftar Semua Hotspot di panel admin.
 
-### Langkah 4 — Area pantauan dan notifikasi (B2, B3, F6) · P2
-1. **Area pantauan**: buat `MonitoringAreaService` (tambah, daftar milik user, hapus). Validasi lintang/bujur di entity (ikuti pola `Guard` pada `Hotspot`). Id dari `NextIdAsync` (tambahkan `IdKind.Area` dan sequence-nya di `AppDbContext` dan `schema.sql`).
-2. **Endpoint**: `/api/monitoring-areas` (GET, POST, DELETE), hanya pemilik. Ambil `userId` dari klaim `sub` di token, bukan dari body request.
-3. **Notifikasi**: `NotificationService` dengan `CheckNewHotspotsAsync(userId, since)` (hotspot dengan `DetectedAt > since` di dalam `MonitoringArea.Contains`) dan penyimpanan `Notification`. Panggil setelah `SyncService` mengimpor hotspot baru.
-4. **Endpoint**: `GET /api/notifications` dan `POST /api/notifications/{id}/read`. Mulai dengan polling dari frontend (timer per beberapa menit); SignalR bisa belakangan.
-5. **Frontend**: layar kelola area, ikon lonceng dengan jumlah belum dibaca, dan ganti `SavedLocationsCount` agar memakai area/lokasi tersimpan yang sungguhan. Hormati `AppSettings.NotificationsEnabled`.
-6. **Tes**: area mengandung titik, notifikasi hanya untuk pemilik area, user lain tidak bisa membaca/menghapus area orang lain (403/404).
+### Langkah 4 — Lokasi tersimpan, notifikasi, dan asap (B2, B3, F6) · SELESAI
+Sudah dikerjakan dan dijelaskan di [docs/notifikasi.md](docs/notifikasi.md): lokasi tersimpan (titik + radius), model asap di simulasi, penilaian dampak, notifikasi tanpa pengiriman berulang, endpoint, serta UI (sidebar, peta, lonceng, banner).
+Tersisa (lihat B16–B20, F11): aktifkan sinkronisasi terjadwal agar otomatis, uji di PostgreSQL asli, push di luar aplikasi, dan kalibrasi asap dengan data nyata.
 
 ### Langkah 5 — Migration dan skema (B4) · P2
 1. Pasang `dotnet-ef` dan tambah paket `Microsoft.EntityFrameworkCore.Design` di `Ignis.Api`.
@@ -289,5 +297,5 @@ Pengembangan lanjutan (opsional, di luar lingkup tugas): tipe lahan/bahan bakar,
 5. Bila kunci Google akan ikut di paket penilaian, ingat penilai harus masuk sebagai Test user (atau Publish app), kalau tidak Google menolak.
 
 ### Urutan pengerjaan yang disarankan
-`Langkah 1` (paket penilaian, termasuk uji PostgreSQL) → `2` (uji GUI dan rapikan) → `7` (Google, kapan pun kunci siap) → `4` (area dan notifikasi) → `5` → `6`. (Langkah 3, simulasi, sudah selesai.)
+`Langkah 1` (paket penilaian, termasuk uji PostgreSQL) → `2` (uji GUI dan rapikan) → `7` (Google, kapan pun kunci siap) → `5` → `6`. (Langkah 3, simulasi, dan Langkah 4, lokasi dan notifikasi, sudah selesai.)
 Bila waktu mepet: kerjakan 1 dan 2 dulu, karena itu yang dinilai langsung; 4–6 masuk daftar "pekerjaan lanjutan" di laporan.

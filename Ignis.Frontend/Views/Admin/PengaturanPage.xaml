@@ -26,7 +26,7 @@
                     <Border Style="{StaticResource Card}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource H2}" Text="Notifikasi"/>
-                            <CheckBox x:Name="ChkNotif" Content="Tampilkan notifikasi saat ada hotspot baru" Margin="0,0,0,4"/>
+                            <CheckBox x:Name="ChkNotif" Content="Tampilkan banner saat ada notifikasi api atau asap di dekat lokasi pengguna" Margin="0,0,0,4"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

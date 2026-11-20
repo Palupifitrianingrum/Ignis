@@ -20,6 +20,10 @@
 --   users.is_active         status aktif/nonaktif pengguna (halaman Pengguna)
 --   manual_hotspots.note    catatan laporan pada form hotspot manual
 --   activity_log            log aktivitas (halaman Pengguna)
+--   monitoring_areas.latitude/longitude   titik pusat lokasi tersimpan (rumah); min/max dihitung dari titik dan radius (km)
+--   notifications.area_id/kind/level/eta_hours/distance_km   lokasi yang terancam, jenis (Fire/Smoke), tingkat 1-3,
+--                           perkiraan jam tiba, dan jarak, hasil simulasi api dan asap
+--   app_settings            pengaturan server yang diubah lewat aplikasi (override API key, terenkripsi)
 --
 -- Catatan: relasi "monitors / refers to" antara MONITORING_AREA dan HOTSPOT pada ERD tidak punya kolom FK;
 -- diperlakukan sebagai relasi spasial (hotspot berada di dalam kotak lat/lon area) dan dihitung lewat MonitoringArea.Contains().
@@ -119,6 +123,8 @@ CREATE TABLE monitoring_areas (
     area_id character varying(40) NOT NULL,
     user_id character varying(40) NOT NULL,
     name character varying(120) NOT NULL,
+    latitude double precision NOT NULL,
+    longitude double precision NOT NULL,
     min_latitude double precision NOT NULL,
     max_latitude double precision NOT NULL,
     min_longitude double precision NOT NULL,
@@ -134,19 +140,27 @@ CREATE TABLE notifications (
     notification_id character varying(40) NOT NULL,
     user_id character varying(40) NOT NULL,
     hotspot_id character varying(20) NOT NULL,
+    area_id character varying(40),
+    kind character varying(10) NOT NULL,
+    level integer NOT NULL,
+    eta_hours integer NOT NULL,
+    distance_km double precision NOT NULL,
     title character varying(200) NOT NULL,
     message text NOT NULL,
     created_at timestamp without time zone NOT NULL,
     is_read boolean NOT NULL,
     CONSTRAINT "PK_notifications" PRIMARY KEY (notification_id),
     CONSTRAINT "FK_notifications_hotspots_hotspot_id" FOREIGN KEY (hotspot_id) REFERENCES hotspots (hotspot_id) ON DELETE CASCADE,
+    CONSTRAINT "FK_notifications_monitoring_areas_area_id" FOREIGN KEY (area_id) REFERENCES monitoring_areas (area_id) ON DELETE CASCADE,
     CONSTRAINT "FK_notifications_registered_users_user_id" FOREIGN KEY (user_id) REFERENCES registered_users (user_id) ON DELETE CASCADE
 );
 CREATE INDEX "IX_activity_log_created_at" ON activity_log (created_at);
 CREATE INDEX "IX_hotspots_detected_at" ON hotspots (detected_at);
 CREATE UNIQUE INDEX "IX_hotspots_detected_at_latitude_longitude" ON hotspots (detected_at, latitude, longitude) WHERE source = 'Satellite';
 CREATE INDEX "IX_monitoring_areas_user_id" ON monitoring_areas (user_id);
+CREATE INDEX "IX_notifications_area_id" ON notifications (area_id);
 CREATE INDEX "IX_notifications_hotspot_id" ON notifications (hotspot_id);
+CREATE INDEX "IX_notifications_user_id_created_at" ON notifications (user_id, created_at);
 CREATE INDEX "IX_notifications_user_id_is_read" ON notifications (user_id, is_read);
 CREATE INDEX "IX_predictions_hotspot_id_created_at" ON predictions (hotspot_id, created_at);
 CREATE INDEX "IX_predictions_weather_id" ON predictions (weather_id);
@@ -154,7 +168,7 @@ CREATE UNIQUE INDEX "IX_users_email" ON users (email);
 CREATE INDEX "IX_weather_data_hotspot_id_timestamp" ON weather_data (hotspot_id, timestamp);
 
 -- ---------------------------------------------------------------------
--- Sequence untuk Id berformat "PREFIX-0001" (HS-, WX-, PR-, U-).
+-- Sequence untuk Id berformat "PREFIX-0001" (HS-, WX-, PR-, U-, AR-, NT-).
 -- Id dibuat server dengan nextval() sehingga dua penulis bersamaan tidak pernah mendapat nomor yang sama.
 -- Mulai dari 1000: nomor di bawahnya dipakai data demo. Ignis.Api juga membuatnya (IF NOT EXISTS) saat start.
 -- ---------------------------------------------------------------------
@@ -162,6 +176,8 @@ CREATE SEQUENCE IF NOT EXISTS ignis_hotspot_seq START 1000;
 CREATE SEQUENCE IF NOT EXISTS ignis_weather_seq START 1000;
 CREATE SEQUENCE IF NOT EXISTS ignis_prediction_seq START 1000;
 CREATE SEQUENCE IF NOT EXISTS ignis_user_seq START 1000;
+CREATE SEQUENCE IF NOT EXISTS ignis_area_seq START 1000;           -- lokasi tersimpan (AR-1000, ...)
+CREATE SEQUENCE IF NOT EXISTS ignis_notification_seq START 1000;   -- notifikasi (NT-1000, ...)
 
 -- ---------------------------------------------------------------------
 -- Pengaturan server yang diubah lewat aplikasi (saat ini: override API key FIRMS/OpenWeather).

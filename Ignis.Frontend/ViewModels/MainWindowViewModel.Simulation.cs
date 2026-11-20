@@ -67,6 +67,9 @@ namespace Ignis.Frontend.ViewModels
         [ObservableProperty] private string simulationLimitText = string.Empty;
         [ObservableProperty] private bool showSimulationLimit;
 
+        /// <summary>Ringkasan asap pada jam yang sedang ditampilkan (luas dan tingkat tertinggi).</summary>
+        [ObservableProperty] private string simulationSmokeText = string.Empty;
+
         /// <summary>Sudut putar panah kompas (0 = menghadap utara, searah jarum jam) = arah rambatan api.</summary>
         [ObservableProperty] private double windArrowAngle;
 
@@ -139,6 +142,7 @@ namespace Ignis.Frontend.ViewModels
         private void ApplySimulation(SimulationDto sim)
         {
             _simulation = sim;
+            ApplyImpactsFromCurrentSimulation();   // status tiap lokasi tersimpan untuk simulasi ini
 
             // Jam kapan tiap sel pertama kali menyala: dasar pewarnaan menurut umur api.
             var ignition = new Dictionary<(double, double), int>();
@@ -184,8 +188,20 @@ namespace Ignis.Frontend.ViewModels
                 ? "1 sel (titik asal)"
                 : $"{frame.BurningCells.Count} sel terbakar • +{frame.NewCells} baru";
             AreaChartMarkerX = _simulation.Hours == 0 ? 0 : hour * ChartWidth / _simulation.Hours;
+            SimulationSmokeText = SmokeSummary(_simulation, frame, hour);
 
             RaiseMapDataChanged();
+        }
+
+        /// <summary>"Asap: ±120 km² · tertinggi sedang" untuk jam yang sedang ditampilkan.</summary>
+        private static string SmokeSummary(SimulationDto sim, SimulationFrameDto frame, int hour)
+        {
+            if (frame.SmokeCells.Count == 0) return hour == 0 ? "Asap: belum ada (api baru menyala)" : "Asap: belum terlihat";
+
+            double sideKm = sim.SmokeCellSizeDegrees * 111.32;
+            double areaKm2 = frame.SmokeCells.Count * sideKm * sideKm * Math.Cos(sim.OriginLatitude * Math.PI / 180.0);
+            var label = frame.SmokeCells.Max(c => c.Level) switch { 3 => "pekat", 2 => "sedang", _ => "ringan" };
+            return $"Asap: ±{areaKm2.ToString("N0", Id)} km² · tertinggi {label}";
         }
 
         private void BuildAreaChart(SimulationDto sim)
@@ -223,9 +239,14 @@ namespace Ignis.Frontend.ViewModels
                     Math.Max(0, hour - _ignitionHour.GetValueOrDefault((c.Latitude, c.Longitude), hour))))
                 .ToList();
 
+            var step = _simulation.SmokeCellSizeDegrees;
+            var smoke = frame.SmokeCells
+                .Select(c => new SmokeCellView(_simulation.OriginLatitude + c.Row * step, _simulation.OriginLongitude + c.Col * step, c.Level))
+                .ToList();
+
             return new SimulationMapState(
                 _simulation.HotspotId, _simulation.OriginLatitude, _simulation.OriginLongitude,
-                _simulation.CellSizeDegrees, _simulation.SpreadDirection, hour, _simulation.Hours, cells);
+                _simulation.CellSizeDegrees, _simulation.SpreadDirection, hour, _simulation.Hours, cells, smoke, step);
         }
 
         // =====================================================================
@@ -303,6 +324,7 @@ namespace Ignis.Frontend.ViewModels
         private void ClearSimulationData()
         {
             _simulation = null;
+            ApplyImpactsFromCurrentSimulation();   // tanpa simulasi: status lokasi dikosongkan
             _ignitionHour = new();
             _renderedHour = -1;
             HasSimulation = false;
@@ -314,6 +336,7 @@ namespace Ignis.Frontend.ViewModels
             SimulationAreaText = "0 ha";
             SimulationCellsText = string.Empty;
             ShowSimulationLimit = false;
+            SimulationSmokeText = string.Empty;
             AreaChartLinePoints = new PointCollection();
             AreaChartFillPoints = new PointCollection();
             AreaChartMarkerX = 0;

@@ -125,11 +125,14 @@ classDiagram
         +string Id
         +string UserId
         +string Name
+        +double Latitude
+        +double Longitude
         +double MinLatitude
         +double MaxLatitude
         +double MinLongitude
         +double MaxLongitude
         +double Radius
+        +Update(name, lat, lon, radiusKm) void
         +Contains(lat, lon) bool
     }
 
@@ -137,6 +140,11 @@ classDiagram
         +string Id
         +string UserId
         +string HotspotId
+        +string AreaId
+        +NotificationKind Kind
+        +int Level
+        +int EtaHours
+        +double DistanceKm
         +string Title
         +string Message
         +DateTime CreatedAt
@@ -178,6 +186,7 @@ classDiagram
         class AuthEndpoints
         class HotspotEndpoints
         class AdminEndpoints
+        class NotificationEndpoints
         class Policies
     }
 
@@ -216,6 +225,16 @@ classDiagram
         class SyncBackgroundService
         class ActivityLogService
         class FwiPredictionModel
+        class NotificationService {
+            +EvaluateAllAsync()
+            +EvaluateUserAsync(userId)
+            +EvaluateAreaAsync(areaId)
+            +EvaluateHotspotAsync(hotspotId)
+            +ListAsync(userId)
+        }
+        class MonitoringAreaService
+        class SmokePlumeModel
+        class ExposureEvaluator
         class FireSpreadSimulator {
             +Run(hotspot, weather, hours) SimulationResult
             +Simulate(hotspot, weather, hours) IEnumerable~SimulationFrame~
@@ -242,6 +261,17 @@ classDiagram
     HotspotEndpoints --> HotspotService
     HotspotEndpoints --> PredictionService
     HotspotEndpoints --> FireSpreadSimulator
+    HotspotEndpoints --> NotificationService
+    HotspotEndpoints ..> ExposureEvaluator
+    NotificationEndpoints --> MonitoringAreaService
+    NotificationEndpoints --> NotificationService
+    NotificationService --> PredictionService
+    NotificationService --> FireSpreadSimulator
+    NotificationService ..> ExposureEvaluator
+    NotificationService --> AppDbContext
+    MonitoringAreaService --> AppDbContext
+    FireSpreadSimulator --> SmokePlumeModel
+    SyncService --> NotificationService
     AdminEndpoints --> UserService
     AdminEndpoints --> SyncService
     AdminEndpoints --> ActivityLogService

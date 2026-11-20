@@ -14,7 +14,7 @@ namespace Ignis.Api.Services;
 /// </summary>
 public sealed class SyncService(FirmsClient firms, WeatherClient weather, HotspotService hotspots,
                                 IntegrationOptions options, ActivityLogService log, IntegrationStatus status,
-                                ILogger<SyncService>? logger = null)
+                                ILogger<SyncService>? logger = null, NotificationService? notifications = null)
 {
     public async Task<SyncResult> RunAsync(CancellationToken ct = default)
     {
@@ -70,6 +70,22 @@ public sealed class SyncService(FirmsClient firms, WeatherClient weather, Hotspo
             // --- Cuaca (cek koneksi; pengambilan per-hotspot terjadi saat simulasi/prediksi) ---
             var check = await weather.CheckConnectionAsync(ct);
             messages.Add(check.Message);
+
+            // --- Notifikasi: hotspot baru dan cuaca terbaru bisa mengubah dampak pada lokasi tersimpan pengguna ---
+            if (notifications != null)
+            {
+                try
+                {
+                    var evaluation = await notifications.EvaluateAllAsync(ct);
+                    if (evaluation.Areas > 0)
+                        messages.Add($"Notifikasi: {evaluation.Created} baru untuk {evaluation.Areas} lokasi tersimpan ({evaluation.HotspotsSimulated} hotspot disimulasikan).");
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    logger?.LogError(ex, "Pemeriksaan notifikasi setelah sinkronisasi gagal");
+                    messages.Add("Pemeriksaan notifikasi gagal (lihat log server); sinkronisasi hotspot tetap berhasil.");
+                }
+            }
 
             return new SyncResult(messages, added, firmsState, check.State, DateTime.Now);
         }

@@ -36,6 +36,7 @@ else if (jwt.Key.Length < 32)
 builder.Services.AddSingleton(jwt);
 builder.Services.AddSingleton(config.GetSection("Integrations").Get<IntegrationOptions>() ?? new IntegrationOptions());
 builder.Services.AddSingleton(config.GetSection("Google").Get<GoogleOptions>() ?? new GoogleOptions());
+builder.Services.AddSingleton(config.GetSection("Notifications").Get<NotificationOptions>() ?? new NotificationOptions());
 
 // ---- Database: PostgreSQL (Storage:Provider=Postgres) atau InMemory untuk dev/test (default) ----
 if ((config["Storage:Provider"] ?? "InMemory").Equals("Postgres", StringComparison.OrdinalIgnoreCase))
@@ -65,7 +66,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
 });
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(Policies.Admin, p => p.RequireRole(nameof(Ignis.Shared.Role.Admin)));
+    .AddPolicy(Policies.Admin, p => p.RequireRole(nameof(Ignis.Shared.Role.Admin)))
+    .AddPolicy(Policies.Registered, p => p.RequireRole(nameof(Ignis.Shared.Role.Registered)));
 
 // ---- Layanan aplikasi ----
 builder.Services.AddSingleton<TokenService>();
@@ -88,6 +90,8 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<HotspotService>();
 builder.Services.AddScoped<PredictionService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<MonitoringAreaService>();
+builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<SyncService>();
 builder.Services.AddHostedService<SyncBackgroundService>();   // mati kecuali Sync:Enabled=true
 
@@ -105,6 +109,7 @@ app.MapAuthEndpoints();
 app.MapHotspotEndpoints();
 app.MapAdminEndpoints();
 app.MapSettingsEndpoints();
+app.MapNotificationEndpoints();
 
 app.Run();
 

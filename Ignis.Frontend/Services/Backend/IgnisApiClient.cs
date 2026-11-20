@@ -41,6 +41,9 @@ public sealed class IgnisApiClient
     public bool IsLoggedIn => CurrentUser != null;
     public bool IsAdmin => CurrentUser?.Role == Role.Admin;
 
+    /// <summary>Pengguna terdaftar: pemilik lokasi tersimpan dan notifikasi (admin tidak, sesuai ERD).</summary>
+    public bool IsRegisteredUser => CurrentUser?.Role == Role.Registered;
+
     /// <summary>Dipicu saat pengguna login, logout, atau sesi berakhir (token kedaluwarsa).</summary>
     public event Action? SessionChanged;
 
@@ -163,6 +166,46 @@ public sealed class IgnisApiClient
 
     public Task<SimulationDto> GetSimulationAsync(string hotspotId, int hours = 18) =>
         GetAsync<SimulationDto>($"api/hotspots/{Uri.EscapeDataString(hotspotId)}/simulation?hours={hours}");
+
+    // ================= lokasi tersimpan dan notifikasi (pengguna terdaftar) =================
+
+    public async Task<IReadOnlyList<MonitoringAreaDto>> GetMonitoringAreasAsync() =>
+        await GetAsync<List<MonitoringAreaDto>>("api/monitoring-areas");
+
+    /// <summary>Simpan lokasi baru. Server langsung memeriksa dampak simulasi dan membuat notifikasi bila lokasi sudah terancam.</summary>
+    public Task<MonitoringAreaDto> CreateMonitoringAreaAsync(MonitoringAreaRequest request) =>
+        SendForAsync<MonitoringAreaDto>(HttpMethod.Post, "api/monitoring-areas", request);
+
+    public Task<MonitoringAreaDto> UpdateMonitoringAreaAsync(string id, MonitoringAreaRequest request) =>
+        SendForAsync<MonitoringAreaDto>(HttpMethod.Put, $"api/monitoring-areas/{Uri.EscapeDataString(id)}", request);
+
+    public async Task DeleteMonitoringAreaAsync(string id)
+    {
+        using var _ = await SendAsync(HttpMethod.Delete, $"api/monitoring-areas/{Uri.EscapeDataString(id)}");
+    }
+
+    /// <summary>Notifikasi milik pengguna (terbaru di atas) beserta jumlah yang belum dibaca.</summary>
+    public Task<NotificationListDto> GetNotificationsAsync(bool unreadOnly = false, int limit = 50) =>
+        GetAsync<NotificationListDto>($"api/notifications?unreadOnly={(unreadOnly ? "true" : "false")}&limit={limit}");
+
+    public async Task MarkNotificationReadAsync(string id)
+    {
+        using var _ = await SendAsync(HttpMethod.Post, $"api/notifications/{Uri.EscapeDataString(id)}/read");
+    }
+
+    public async Task MarkAllNotificationsReadAsync()
+    {
+        using var _ = await SendAsync(HttpMethod.Post, "api/notifications/read-all");
+    }
+
+    public async Task DeleteNotificationAsync(string id)
+    {
+        using var _ = await SendAsync(HttpMethod.Delete, $"api/notifications/{Uri.EscapeDataString(id)}");
+    }
+
+    /// <summary>Minta server memeriksa lokasi saya sekarang (mis. setelah cuaca berubah).</summary>
+    public Task<CheckResultDto> CheckNotificationsAsync() =>
+        SendForAsync<CheckResultDto>(HttpMethod.Post, "api/notifications/check");
 
     // ================= pengguna (admin) =================
 

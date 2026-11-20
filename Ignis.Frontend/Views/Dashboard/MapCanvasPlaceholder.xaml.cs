@@ -24,8 +24,10 @@ namespace Ignis.Frontend.Views.Dashboard;
 public partial class MapCanvasPlaceholder : UserControl
 {
     private bool _isInitialized;
+    private MemoryLayer? _smokeLayer;
     private MemoryLayer? _simulationLayer;
     private MemoryLayer? _simulationOverlayLayer;
+    private MemoryLayer? _locationsLayer;
     private MemoryLayer? _hotspotLayer;
 
     private static readonly Mapsui.Styles.Color SatelliteColor = new(232, 83, 31);     // #E8531F
@@ -47,7 +49,7 @@ public partial class MapCanvasPlaceholder : UserControl
 
         if (_currentVm != null)
         {
-            UpdateMapLayers(_currentVm.VisibleHotspots, _currentVm.CurrentSimulationState, _currentVm.SimulationHotspotId);
+            UpdateMapLayers(_currentVm.VisibleHotspots, _currentVm.CurrentSimulationState, _currentVm.SimulationHotspotId, _currentVm.SavedLocations.ToList());
         }
     }
 
@@ -60,11 +62,15 @@ public partial class MapCanvasPlaceholder : UserControl
         map.Layers.Add(tileLayer);
 
         // 2. Add Simulation & Hotspot Vector Layers
+        _smokeLayer = new MemoryLayer { Name = "Smoke", Features = new List<IFeature>(), Style = null };
         _simulationLayer = new MemoryLayer { Name = "Simulation", Features = new List<IFeature>(), Style = null };
         _simulationOverlayLayer = new MemoryLayer { Name = "SimulationOverlay", Features = new List<IFeature>(), Style = null };
+        _locationsLayer = new MemoryLayer { Name = "SavedLocations", Features = new List<IFeature>(), Style = null };
         _hotspotLayer = new MemoryLayer { Name = "Hotspots", Features = new List<IFeature>(), Style = null };
+        map.Layers.Add(_smokeLayer);                 // asap di paling bawah, api di atasnya
         map.Layers.Add(_simulationLayer);
         map.Layers.Add(_simulationOverlayLayer);
+        map.Layers.Add(_locationsLayer);             // lokasi tersimpan pengguna (rumah) dengan cincin radius
         map.Layers.Add(_hotspotLayer);
 
         // 3. Set Limiter so user cannot pan or zoom outside map extent into empty white space
@@ -115,7 +121,21 @@ public partial class MapCanvasPlaceholder : UserControl
     private void OnMapInfo(object? sender, MapInfoEventArgs e)
     {
         if (MapControl.Map == null || _currentVm == null) return;
+
         var mapInfo = e.GetMapInfo(MapControl.Map.Layers);
+
+        // Mode memilih lokasi (dari dialog lokasi tersimpan): klik di mana saja = titik yang dipilih.
+        if (_currentVm.IsPickingLocation)
+        {
+            if (mapInfo?.WorldPosition is { } world)
+            {
+                var lonLat = SphericalMercator.ToLonLat(world.X, world.Y);
+                double lon = lonLat.lon, lat = lonLat.lat;
+                Dispatcher.BeginInvoke(new Action(() => _currentVm.CompletePick(lat, lon)));
+            }
+            return;
+        }
+
         if (mapInfo?.Feature?["id"] is string id)
         {
             // Klik pin = simulasikan hotspot itu. Detail hotspot dibuka lewat tombol di panel simulasi.
@@ -146,7 +166,7 @@ public partial class MapCanvasPlaceholder : UserControl
             _currentVm.LocateMeRequested += OnLocateMeRequested;
             _currentVm.MapDataChanged += UpdateMapLayers;
             _currentVm.FocusLocationRequested += OnFocusLocationRequested;
-            UpdateMapLayers(vm.VisibleHotspots, vm.CurrentSimulationState, vm.SimulationHotspotId);
+            UpdateMapLayers(vm.VisibleHotspots, vm.CurrentSimulationState, vm.SimulationHotspotId, vm.SavedLocations.ToList());
         }
         else
         {
@@ -195,9 +215,83 @@ public partial class MapCanvasPlaceholder : UserControl
         return f;
     }
 
-    private void UpdateMapLayers(IReadOnlyList<HotspotDto> hotspots, SimulationMapState? sim, string? selectedId)
+    // Warna asap menurut tingkat: abu-abu muda (ringan) sampai hampir hitam (pekat); makin pekat makin buram.
+    private static Mapsui.Styles.Color SmokeColor(int level) => level switch
     {
-        if (_hotspotLayer == null || _simulationLayer == null || _simulationOverlayLayer == null) return;
+        3 => new Mapsui.Styles.Color(45, 45, 55, 165),
+        2 => new Mapsui.Styles.Color(95, 95, 108, 120),
+        _ => new Mapsui.Styles.Color(150, 150, 160, 75)
+    };
+
+    /// <summary>Lingkaran radius (km) di sekitar sebuah titik, sebagai poligon di koordinat peta.</summary>
+    private static Polygon CirclePolygon(double lat, double lon, double radiusKm, int segments = 48)
+    {
+        double cosLat = Math.Max(0.01, Math.Cos(lat * Math.PI / 180.0));
+        var ring = new NetTopologySuite.Geometries.Coordinate[segments + 1];
+        for (int i = 0; i < segments; i++)
+        {
+            double a = 2 * Math.PI * i / segments;
+            var (x, y) = SphericalMercator.FromLonLat(lon + radiusKm * Math.Sin(a) / (111.32 * cosLat), lat + radiusKm * Math.Cos(a) / 111.32);
+            ring[i] = new NetTopologySuite.Geometries.Coordinate(x, y);
+        }
+        ring[segments] = ring[0];
+        return new Polygon(new LinearRing(ring));
+    }
+
+    private void UpdateMapLayers(IReadOnlyList<HotspotDto> hotspots, SimulationMapState? sim, string? selectedId, IReadOnlyList<SavedLocationItem> locations)
+    {
+        if (_hotspotLayer == null || _simulationLayer == null || _simulationOverlayLayer == null || _smokeLayer == null || _locationsLayer == null) return;
+
+        // 0) Asap: kotak grid kasar, makin pekat makin gelap. Digambar paling bawah supaya api tetap terlihat di atasnya.
+        var smokeFeatures = new List<IFeature>(sim?.SmokeCells.Count ?? 0);
+        if (sim != null)
+        {
+            foreach (var c in sim.SmokeCells)
+            {
+                var f = new GeometryFeature(CellPolygon(c.Latitude, c.Longitude, sim.SmokeCellSizeDegrees));
+                f.Styles.Add(new VectorStyle { Fill = new Brush(SmokeColor(c.Level)), Outline = new Pen(Mapsui.Styles.Color.Transparent, 0) });
+                smokeFeatures.Add(f);
+            }
+        }
+        _smokeLayer.Features = smokeFeatures;
+        _smokeLayer.DataHasChanged();
+
+        // 0b) Lokasi tersimpan pengguna: cincin radius peringatan + penanda; merah bila ada notifikasi belum dibaca.
+        var locationFeatures = new List<IFeature>(locations.Count * 2);
+        foreach (var loc in locations)
+        {
+            bool alert = loc.UnreadCount > 0;
+            var ringColor = alert ? new Mapsui.Styles.Color(220, 38, 38) : new Mapsui.Styles.Color(22, 163, 74);
+
+            var ring = new GeometryFeature(CirclePolygon(loc.Latitude, loc.Longitude, loc.RadiusKm));
+            ring.Styles.Add(new VectorStyle
+            {
+                Fill = new Brush(new Mapsui.Styles.Color(ringColor.R, ringColor.G, ringColor.B, 12)),   // tipis: peta di bawahnya tetap terbaca
+                Outline = new Pen(new Mapsui.Styles.Color(ringColor.R, ringColor.G, ringColor.B, 210), 2) { PenStyle = PenStyle.Dash }
+            });
+            locationFeatures.Add(ring);
+
+            var (px, py) = SphericalMercator.FromLonLat(loc.Longitude, loc.Latitude);
+            var marker = new PointFeature(new MPoint(px, py));
+            marker.Styles.Add(new SymbolStyle
+            {
+                SymbolType = SymbolType.Ellipse,
+                SymbolScale = 0.6,
+                Fill = new Brush(Mapsui.Styles.Color.White),
+                Outline = new Pen(ringColor, 4)
+            });
+            marker.Styles.Add(new LabelStyle
+            {
+                Text = loc.Name,
+                ForeColor = new Mapsui.Styles.Color(15, 23, 42),
+                BackColor = new Brush(new Mapsui.Styles.Color(255, 255, 255, 215)),
+                Offset = new Offset(0, 24),
+                Font = new Mapsui.Styles.Font { Size = 12 }
+            });
+            locationFeatures.Add(marker);
+        }
+        _locationsLayer.Features = locationFeatures;
+        _locationsLayer.DataHasChanged();
 
         // 1) Sel api: kotak sesuai grid simulasi, diwarnai menurut umur.
         var cellFeatures = new List<IFeature>(sim?.Cells.Count ?? 0);

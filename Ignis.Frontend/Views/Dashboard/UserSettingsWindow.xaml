@@ -38,7 +38,7 @@
                     <StackPanel>
                         <TextBlock Style="{StaticResource H2}" Text="Notifikasi"/>
                         <CheckBox x:Name="ChkNotif"
-                                  Content="Tampilkan notifikasi saat titik api (hotspot) baru terdeteksi"
+                                  Content="Tampilkan banner saat ada notifikasi api atau asap di dekat lokasi saya"
                                   Foreground="{StaticResource Ink}"
                                   FontSize="13"
                                   Margin="0,2,0,0"/>

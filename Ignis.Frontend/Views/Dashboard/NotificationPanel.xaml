@@ -1,0 +1,151 @@
+<UserControl x:Class="Ignis.Frontend.Views.Dashboard.NotificationPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="400">
+
+    <UserControl.Resources>
+        <Style x:Key="PanelLinkButton" TargetType="Button">
+            <Setter Property="Foreground" Value="#C2410C"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <TextBlock x:Name="label" Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
+                                   FontSize="{TemplateBinding FontSize}" FontWeight="{TemplateBinding FontWeight}"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="label" Property="TextDecorations" Value="Underline"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="label" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Baris notifikasi yang bisa diklik: tidak ada gaya tombol bawaan -->
+        <Style x:Key="RowButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="Transparent">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#0A000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="18"
+            Visibility="{Binding IsNotificationsOpen, Converter={StaticResource B2V}}">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Opacity="0.16" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Judul dan aksi -->
+            <Grid Margin="18,14,18,10">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Notifikasi" FontSize="15" FontWeight="Bold" Foreground="#0F172A"/>
+                    <Border Background="#DC2626" CornerRadius="9" Padding="7,1" Margin="8,0,0,0" VerticalAlignment="Center"
+                            Visibility="{Binding HasUnreadNotifications, Converter={StaticResource B2V}}">
+                        <TextBlock FontSize="10.5" FontWeight="Bold" Foreground="#FFFFFF">
+                            <Run Text="{Binding UnreadNotificationCount, Mode=OneWay}"/><Run Text=" baru"/>
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="Periksa sekarang" Style="{StaticResource PanelLinkButton}" Command="{Binding CheckNotificationsNowCommand}"
+                            IsEnabled="{Binding CanCheckNotifications}"
+                            ToolTip="Minta server menyimulasikan ulang dan memeriksa lokasi Anda sekarang"/>
+                    <Button Content="Tandai semua dibaca" Style="{StaticResource PanelLinkButton}" Margin="14,0,0,0" Command="{Binding MarkAllNotificationsReadCommand}"
+                            IsEnabled="{Binding HasUnreadNotifications}"/>
+                </StackPanel>
+            </Grid>
+
+            <Rectangle Grid.Row="0" Height="1" Fill="#E2E8F0" VerticalAlignment="Bottom"/>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="430">
+                <StackPanel>
+                    <TextBlock Visibility="{Binding HasNoNotifications, Converter={StaticResource B2V}}"
+                               Text="Belum ada notifikasi. Anda akan diberi tahu di sini bila simulasi memperkirakan api atau asap mendekati lokasi tersimpan Anda."
+                               FontSize="12" Foreground="#64748B" TextWrapping="Wrap" Margin="18,16,18,18"/>
+
+                    <ItemsControl ItemsSource="{Binding Notifications}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#F1F5F9" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <Button Style="{StaticResource RowButton}"
+                                                Command="{Binding DataContext.OpenNotificationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="5"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Background="{Binding LevelColorHex}"/>
+
+                                                <StackPanel Grid.Column="1" Margin="14,11,40,12">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Border Background="{Binding LevelColorHex}" CornerRadius="5" Padding="6,1">
+                                                            <TextBlock Text="{Binding LevelLabel}" FontSize="9.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                        </Border>
+                                                        <Border Background="#E2E8F0" CornerRadius="5" Padding="6,1" Margin="5,0,0,0">
+                                                            <TextBlock Text="{Binding KindLabel}" FontSize="9.5" FontWeight="Bold" Foreground="#334155"/>
+                                                        </Border>
+                                                        <TextBlock Text="{Binding TimeText}" FontSize="10.5" Foreground="#94A3B8" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                        <Ellipse Width="8" Height="8" Fill="#2563EB" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                                 Visibility="{Binding IsUnread, Converter={StaticResource B2V}}" ToolTip="Belum dibaca"/>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="Bold" Foreground="#0F172A" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                                    <TextBlock Text="{Binding Message}" FontSize="11.5" Foreground="#475569" TextWrapping="Wrap" Margin="0,3,0,0"
+                                                               MaxHeight="76" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Detail}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding LevelColorHex}" Margin="0,5,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Button>
+
+                                        <Button Content="✕" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,10,0" Width="22" Height="22"
+                                                ToolTip="Hapus notifikasi ini" Cursor="Hand"
+                                                Command="{Binding DataContext.DeleteNotificationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="bg" CornerRadius="11" Background="Transparent">
+                                                        <TextBlock Text="✕" FontSize="10.5" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="bg" Property="Background" Value="#F1F5F9"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

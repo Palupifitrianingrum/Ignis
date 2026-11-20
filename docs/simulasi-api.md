@@ -44,6 +44,14 @@ Hasil menyertakan keduanya (`WindFromDirection` dan `SpreadDirection`). Sebelumn
 - Kecepatan angin: m/s. Suhu: °C. Kelembapan: %. Curah hujan: mm.
 - Luas per sel `= (0,005 × 111,32 km)² × cos(lintang)` dalam hektare. Di khatulistiwa ±31 ha, makin ke selatan/utara makin kecil.
 
+## Asap
+
+Selain api, simulasi menghitung **sebaran asap** ([SmokePlumeModel](../Ignis.Api/Services/SmokePlumeModel.cs)) pada grid kasar 0,025° (±2,8 km): asap dipancarkan dari
+sel yang terbakar, terbawa angin ke arah rambatan, menyebar, dan meluruh (lebih cepat saat hujan). Hasilnya tiap frame memuat `smokeCells` (baris, kolom relatif terhadap titik asal,
+dan level 1 ringan / 2 sedang / 3 pekat). Penjelasan model, ambang level, dan batasnya ada di [notifikasi.md](notifikasi.md#3-model-asap).
+
+Asap dipakai untuk **notifikasi** (lokasi tersimpan pengguna yang terkena asap) dan digambar di peta sebagai lapisan abu-abu di bawah api.
+
 ## Endpoint
 
 `GET /api/hotspots/{id}/simulation?hours=N` — butuh login (semua peran). Tanpa token 401, id tidak ada 404.
@@ -69,7 +77,9 @@ Bentuk respons (`SimulationDto` di [Dtos.cs](../Ignis.Shared/Dtos.cs)):
 }
 ```
 
-Tiap frame memuat semua sel terbakar pada jam itu (kumulatif); `newCells` adalah yang baru menyala pada jam itu. Ukuran respons paling besar sekitar 25 frame × 400 sel.
+Tiap frame memuat semua sel terbakar pada jam itu (kumulatif); `newCells` adalah yang baru menyala pada jam itu; `smokeCells` adalah sel asap pada jam itu (`{row, col, level}`;
+lintang = `originLatitude + row × smokeCellSizeDegrees`, bujur = `originLongitude + col × smokeCellSizeDegrees`). `impacts` berisi dampak pada lokasi tersimpan pengguna yang melihat
+(`areaId`, `areaName`, `hotspotDistanceKm`, `fireEtaHours`, `fireMinDistanceKm`, `smokeMaxLevel`, `smokeEtaHours`; `null` = tidak mencapai radius); kosong untuk admin. Ukuran respons paling besar sekitar 25 frame × 400 sel.
 
 ## Tampilan di desktop
 

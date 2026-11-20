@@ -63,11 +63,15 @@ public sealed record PredictionDto(
 
 public sealed record CoordinateDto(double Latitude, double Longitude);
 
+/// <summary>Sel asap pada grid kasar: lintang = asal + Row × SmokeCellSizeDegrees, bujur = asal + Col × SmokeCellSizeDegrees. Level 1 ringan, 2 sedang, 3 pekat.</summary>
+public sealed record SmokeCellDto(int Row, int Col, int Level);
+
 public sealed record SimulationFrameDto(
     int HourOffset,
     IReadOnlyList<CoordinateDto> BurningCells,
     double AreaHa,
-    int NewCells);
+    int NewCells,
+    IReadOnlyList<SmokeCellDto> SmokeCells);
 
 /// <summary>Hasil simulasi penyebaran api untuk satu hotspot: kondisi yang dipakai, ukuran sel, dan frame per jam.</summary>
 /// <param name="SpreadDirection">Arah rambatan api (derajat, 0 = utara, 90 = timur).</param>
@@ -75,6 +79,8 @@ public sealed record SimulationFrameDto(
 /// <param name="WindSpeed">Kecepatan angin (m/s, satuan OpenWeather).</param>
 /// <param name="CellSizeDegrees">Sisi satu sel dalam derajat; sel digambar sebagai kotak [lat ± sisi/2, lon ± sisi/2].</param>
 /// <param name="Truncated">True bila model mencapai batas sel maksimum sehingga luas tidak bertambah lagi.</param>
+/// <param name="SmokeCellSizeDegrees">Sisi sel asap dalam derajat (sel kasar, lima kali sel api).</param>
+/// <param name="SmokeMaxLevel">Level asap tertinggi selama simulasi: 0 tidak ada, 1 ringan, 2 sedang, 3 pekat.</param>
 public sealed record SimulationDto(
     string HotspotId,
     double OriginLatitude,
@@ -91,7 +97,10 @@ public sealed record SimulationDto(
     double CellAreaHa,
     int MaxCells,
     bool Truncated,
-    IReadOnlyList<SimulationFrameDto> Frames);
+    double SmokeCellSizeDegrees,
+    int SmokeMaxLevel,
+    IReadOnlyList<SimulationFrameDto> Frames,
+    IReadOnlyList<AreaImpactDto> Impacts);
 
 // ---------- Pengguna & sinkronisasi ----------
 
@@ -136,6 +145,50 @@ public sealed record SetIntegrationKeyRequest(string Key);
 
 /// <summary>Uji koneksi: <paramref name="Key"/> kosong berarti menguji key yang sedang berlaku.</summary>
 public sealed record TestIntegrationKeyRequest(string? Key);
+
+// ---------- Lokasi tersimpan dan notifikasi ----------
+
+/// <summary>Lokasi tersimpan pengguna (mis. rumah): titik pusat dan radius peringatan.</summary>
+public sealed record MonitoringAreaDto(string Id, string Name, double Latitude, double Longitude, double RadiusKm);
+
+public sealed record MonitoringAreaRequest(string Name, double Latitude, double Longitude, double RadiusKm);
+
+/// <summary>
+/// Dampak sebuah simulasi pada satu lokasi tersimpan milik pengguna yang melihatnya.
+/// <paramref name="FireEtaHours"/>/<paramref name="SmokeEtaHours"/> null berarti api/asap tidak mencapai radius selama simulasi; 0 berarti sudah di dalam radius.
+/// </summary>
+/// <param name="HotspotDistanceKm">Jarak lokasi ke titik hotspot yang disimulasikan.</param>
+/// <param name="FireMinDistanceKm">Jarak terdekat tepi api ke lokasi selama simulasi.</param>
+/// <param name="SmokeMaxLevel">Level asap tertinggi di dalam radius selama simulasi (0 tidak ada, 1 ringan, 2 sedang, 3 pekat).</param>
+public sealed record AreaImpactDto(
+    string AreaId,
+    string AreaName,
+    double HotspotDistanceKm,
+    int? FireEtaHours,
+    double FireMinDistanceKm,
+    int SmokeMaxLevel,
+    int? SmokeEtaHours);
+
+/// <param name="Level">1 perhatian, 2 waspada, 3 bahaya.</param>
+/// <param name="EtaHours">Perkiraan jam sampai api/asap mencapai radius lokasi (0 = sudah).</param>
+public sealed record NotificationDto(
+    string Id,
+    string HotspotId,
+    string? AreaId,
+    string? AreaName,
+    NotificationKind Kind,
+    int Level,
+    int EtaHours,
+    double DistanceKm,
+    string Title,
+    string Message,
+    DateTime CreatedAt,
+    bool IsRead);
+
+public sealed record NotificationListDto(int Unread, IReadOnlyList<NotificationDto> Items);
+
+/// <summary>Ringkasan satu putaran pemeriksaan notifikasi.</summary>
+public sealed record CheckResultDto(int AreasChecked, int HotspotsSimulated, int NotificationsCreated);
 
 // ---------- Autentikasi ----------
 

@@ -25,7 +25,7 @@ public class AppSetting
     public string? UpdatedBy { get; set; }
 }
 
-public enum IdKind { Hotspot, Weather, Prediction, User }
+public enum IdKind { Hotspot, Weather, Prediction, User, Area, Notification }
 
 /// <summary>
 /// Pemetaan entity ke skema PostgreSQL sesuai ERD:
@@ -55,6 +55,8 @@ public class AppDbContext : DbContext
         [IdKind.Weather] = ("WX", "ignis_weather_seq"),
         [IdKind.Prediction] = ("PR", "ignis_prediction_seq"),
         [IdKind.User] = ("U", "ignis_user_seq"),
+        [IdKind.Area] = ("AR", "ignis_area_seq"),
+        [IdKind.Notification] = ("NT", "ignis_notification_seq"),
     };
 
     /// <summary>Nomor pertama untuk Id baru. Data demo memakai nomor di bawah ini, jadi tidak bisa bentrok.</summary>
@@ -228,9 +230,13 @@ public class AppDbContext : DbContext
             e.Property(x => x.HotspotId).HasMaxLength(20);
             e.Property(x => x.Title).HasMaxLength(200).IsRequired();
             e.Property(x => x.Message).IsRequired();
+            e.Property(x => x.AreaId).HasMaxLength(40);
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
             e.HasOne<RegisteredUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<Hotspot>().WithMany().HasForeignKey(x => x.HotspotId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<MonitoringArea>().WithMany().HasForeignKey(x => x.AreaId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => new { x.UserId, x.IsRead });
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
         });
 
         // ---------------- ACTIVITY_LOG (tambahan, di luar ERD) ----------------

@@ -12,6 +12,11 @@
         Background="#D8EEDC"
         WindowStartupLocation="CenterScreen">
 
+    <Window.InputBindings>
+        <!-- Esc membatalkan mode memilih lokasi di peta -->
+        <KeyBinding Key="Escape" Command="{Binding CancelPickCommand}"/>
+    </Window.InputBindings>
+
     <!-- Unified Dashboard Grid with Full Canvas and Overlay Drawer Sidebar -->
     <Grid Background="#D8EEDC">
 
@@ -41,6 +46,9 @@
 
                 <!-- Right: Emergency Alert Badge + User Profile -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+
+                    <!-- Lonceng notifikasi (pengguna terdaftar) -->
+                    <dashboard:NotificationBell Margin="0,0,14,0" VerticalAlignment="Center"/>
 
                     <!-- Emergency Alert Badge (Siaga Darurat Riau) -->
                     <Border Background="#FFF1EB"
@@ -107,6 +115,10 @@
 
                 </StackPanel>
             </Grid>
+
+            <!-- NOTIFIKASI: panel daftar (dari lonceng) dan banner/petunjuk di atas peta -->
+            <dashboard:NotificationPanel Grid.Row="1" Panel.ZIndex="90" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,0,0"/>
+            <dashboard:NotificationToast Grid.Row="1" Panel.ZIndex="95" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0"/>
 
             <!-- PROFILE DROPDOWN CARD (Appears below profile icon when logged in & clicked) -->
             <Border Grid.Row="1"

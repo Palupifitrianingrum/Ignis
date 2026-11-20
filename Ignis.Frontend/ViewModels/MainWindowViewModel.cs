@@ -118,7 +118,7 @@ namespace Ignis.Frontend.ViewModels
 
         public IReadOnlyList<HotspotDto> VisibleHotspots { get; private set; } = Array.Empty<HotspotDto>();
 
-        public event Action<IReadOnlyList<HotspotDto>, SimulationMapState?, string?>? MapDataChanged;
+        public event Action<IReadOnlyList<HotspotDto>, SimulationMapState?, string?, IReadOnlyList<SavedLocationItem>>? MapDataChanged;
         public event Action<double, double, int>? FocusLocationRequested;
 
         public MainWindowViewModel(IDialogService dialogService, IgnisApiClient api, AdminWorkspace workspace)
@@ -135,6 +135,7 @@ namespace Ignis.Frontend.ViewModels
                 Interval = TimeSpan.FromMilliseconds(700)
             };
             _simulationTimer.Tick += OnSimulationTick;
+            InitNotifications();
 
             ApplySession();
         }
@@ -188,7 +189,7 @@ namespace Ignis.Frontend.ViewModels
             MediumRiskCount = 0;
             HighRiskCount = 0;
             CriticalRiskCount = 0;
-            SavedLocationsCount = 0;
+            StopUserFeatures();   // lokasi tersimpan dan notifikasi dikosongkan (logout / belum login)
             EmergencyStatus = "Klik Profil untuk Login";
             RecentLocations.Clear();
             RaiseMapDataChanged();
@@ -278,12 +279,11 @@ namespace Ignis.Frontend.ViewModels
                 });
             }
 
-            SavedLocationsCount = RecentLocations.Count;
             RaiseMapDataChanged();
         }
 
         private void RaiseMapDataChanged() =>
-            MapDataChanged?.Invoke(VisibleHotspots, BuildMapState(), SimulationHotspotId);
+            MapDataChanged?.Invoke(VisibleHotspots, BuildMapState(), SimulationHotspotId, SavedLocations.ToList());
 
         [RelayCommand]
         private void SelectRecentLocation(RecentLocationItem? item)
@@ -299,7 +299,6 @@ namespace Ignis.Frontend.ViewModels
             if (item != null)
             {
                 RecentLocations.Remove(item);
-                SavedLocationsCount = RecentLocations.Count;
             }
         }
 
@@ -307,7 +306,6 @@ namespace Ignis.Frontend.ViewModels
         private void ClearAllRecent()
         {
             RecentLocations.Clear();
-            SavedLocationsCount = 0;
         }
 
         [RelayCommand]
@@ -342,6 +340,7 @@ namespace Ignis.Frontend.ViewModels
                 UserEmail = user.Email;
                 UserRole = user.Role.ToString();
                 await LoadDashboardDataAsync();
+                await StartUserFeaturesAsync();   // lokasi tersimpan dan notifikasi (hanya pengguna terdaftar)
             }
             else
             {
@@ -360,6 +359,7 @@ namespace Ignis.Frontend.ViewModels
                 OpenLogin();
                 return;
             }
+            IsNotificationsOpen = false;
             IsProfileMenuOpen = !IsProfileMenuOpen;
         }
 
@@ -400,6 +400,7 @@ namespace Ignis.Frontend.ViewModels
                 return;
             }
             await LoadDashboardDataAsync();
+            await LoadSavedLocationsAsync();
         }
 
         [RelayCommand]

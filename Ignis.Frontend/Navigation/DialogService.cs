@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Ignis.Frontend.Models;
 using Ignis.Frontend.Views.Admin;
 using Ignis.Frontend.Views.Auth;
 using Ignis.Frontend.Views.Dashboard;
@@ -40,5 +41,16 @@ namespace Ignis.Frontend.Navigation
 
         public void ShowMessage(string message) =>
             MessageBox.Show(message, "Ignis", MessageBoxButton.OK, MessageBoxImage.Information);
+
+        public bool Confirm(string message, string title) =>
+            MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+        public SavedLocationDialogResult? ShowSavedLocationDialog(SavedLocationDraft draft)
+        {
+            var window = new SavedLocationWindow(draft);
+            if (Application.Current?.MainWindow is { IsVisible: true } main) window.Owner = main;
+            window.ShowDialog();
+            return window.Result;
+        }
     }
 }

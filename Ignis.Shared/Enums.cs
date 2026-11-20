@@ -13,3 +13,6 @@ public enum ConnectionState { Unknown, Syncing, Connected, Failed, MissingKey }
 
 /// <summary>Dari mana API key sebuah layanan berasal: override yang diatur admin di aplikasi, file .env server, atau belum ada.</summary>
 public enum KeySource { None, Environment, Override }
+
+/// <summary>Jenis ancaman pada notifikasi: api itu sendiri, atau asap yang terbawa angin.</summary>
+public enum NotificationKind { Fire, Smoke }

@@ -28,7 +28,7 @@ Dependensi: `Frontend → Shared ← Api`, `Tests → Api, Shared`. Frontend tid
 |---|---|---|
 | `Program.cs` | Titik masuk; hanya merangkai layanan, middleware, dan route | — |
 | `Endpoints/` | Definisi route HTTP (tipis, memanggil Services) | `AuthEndpoints`, `HotspotEndpoints`, `AdminEndpoints`, `Policies`, `Mappings` (entity → DTO) |
-| `Services/` | Logika use case | `AuthService`, `TokenService`, `Passwords`, `HotspotService`, `PredictionService`, `UserService`, `SyncService` (+ `SyncBackgroundService`), `ActivityLogService`, `FwiPredictionModel`, `FireSpreadSimulator` (simulasi penyebaran api) |
+| `Services/` | Logika use case | `AuthService`, `TokenService`, `Passwords`, `HotspotService`, `PredictionService`, `UserService`, `SyncService` (+ `SyncBackgroundService`), `ActivityLogService`, `FwiPredictionModel`, `FireSpreadSimulator` (simulasi penyebaran api) + `SmokePlumeModel` (asap), `MonitoringAreaService`, `NotificationService`, `ExposureEvaluator`, `Geo` |
 | `Domain/` | Entity dan aturan bisnis murni (tanpa EF/HTTP) | `Hotspot` → `SatelliteHotspot`/`ManualHotspot`; `User` → `Admin`/`RegisteredUser`; `WeatherData`, `Prediction`, `MonitoringArea`, `Notification`, `DomainException`, `Coordinate`, `Vector` |
 | `Data/` | Database | `AppDbContext` (pemetaan tabel + generator Id), `DatabaseInitializer` (buat tabel, seed, admin pertama), `DemoData` |
 | `Integrations/` | Panggilan ke layanan luar | `FirmsClient`, `FirmsCsvParser`, `WeatherClient`, `GoogleOAuthClient`, `IntegrationOptions`, `IntegrationException`/`IntegrationStatus` |
@@ -73,7 +73,7 @@ Login admin: `admin@ignis.example` / `Ignis@123` (akun demo lain: `andi.pratama@
 4. `dotnet run --project Ignis.Frontend` dan login. Alamat API default `http://localhost:5000/`; ubah lewat env `IGNIS_API_URL` atau `%AppData%\IgnisAdmin\settings.json`.
 5. Buka **Kelola Hotspot**, klik **Tambah Hotspot**, lalu cek di database: `SELECT * FROM hotspots h JOIN manual_hotspots m USING (hotspot_id);`
 
-Dokumentasi: [skema dan ERD](docs/database.md), [fitur untuk tugas OOP](docs/oop-feature.md), [diagram kelas](docs/class-diagram.md), [login Google](docs/google-oauth.md), [simulasi penyebaran api](docs/simulasi-api.md), [key dan integrasi NASA FIRMS/OpenWeather](docs/integrasi-data.md).
+Dokumentasi: [skema dan ERD](docs/database.md), [fitur untuk tugas OOP](docs/oop-feature.md), [diagram kelas](docs/class-diagram.md), [login Google](docs/google-oauth.md), [simulasi penyebaran api](docs/simulasi-api.md), [key dan integrasi NASA FIRMS/OpenWeather](docs/integrasi-data.md), [lokasi tersimpan, notifikasi, dan model asap](docs/notifikasi.md).
 
 ## Keamanan
 
@@ -87,7 +87,6 @@ Dokumentasi: [skema dan ERD](docs/database.md), [fitur untuk tugas OOP](docs/oop
 ## Status backend (yang belum selesai)
 
 Tanda `TODO(backend)` di kode menandai hal berikut:
-- Notifikasi dan area pantauan — entity ada di `Domain/`, belum ada layanan dan endpoint.
 - EF Core migration (skema dibuat dengan `EnsureCreated`; untuk produksi ganti dengan migration).
 - Isian API key FIRMS/weather di halaman **Pengaturan** desktop belum dipakai: server membaca key dari konfigurasinya sendiri (`Integrations__*`). Sediakan `/api/settings` atau hapus isian itu.
 - Pencabutan token (logout di sisi server) dan pembatasan percobaan login.

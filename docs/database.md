@@ -6,8 +6,8 @@ saat start bila `Storage:Provider=Postgres`.
 
 ## Id berformat `HS-1000`
 
-Id hotspot (`HS-`), cuaca (`WX-`), prediksi (`PR-`), dan pengguna (`U-`) dibuat server dari **sequence PostgreSQL**
-(`ignis_hotspot_seq`, `ignis_weather_seq`, `ignis_prediction_seq`, `ignis_user_seq`) lewat `AppDbContext.NextIdAsync`.
+Id hotspot (`HS-`), cuaca (`WX-`), prediksi (`PR-`), pengguna (`U-`), lokasi tersimpan (`AR-`), dan notifikasi (`NT-`) dibuat server dari **sequence PostgreSQL**
+(`ignis_hotspot_seq`, `ignis_weather_seq`, `ignis_prediction_seq`, `ignis_user_seq`, `ignis_area_seq`, `ignis_notification_seq`) lewat `AppDbContext.NextIdAsync`.
 Sequence menjamin dua permintaan bersamaan tidak pernah mendapat nomor yang sama (cara lama "ambil angka terbesar + 1" bisa bentrok).
 Nomor dimulai dari 1000 karena nomor di bawahnya dipakai data demo (`HS-0142`, dst.). Sequence dibuat otomatis saat API start
 (`CREATE SEQUENCE IF NOT EXISTS`) dan juga ada di akhir `database/schema.sql`. Nomor yang sudah dipakai tidak dipakai ulang,
@@ -21,6 +21,7 @@ erDiagram
     users ||--o| registered_users : "is a"
     registered_users ||--o{ monitoring_areas : creates
     registered_users ||--o{ notifications : receives
+    monitoring_areas ||--o{ notifications : "area terancam"
     hotspots ||--o| satellite_hotspots : "is a"
     hotspots ||--o| manual_hotspots : "is a"
     hotspots ||--o{ notifications : generates
@@ -47,6 +48,8 @@ erDiagram
         varchar area_id PK
         varchar user_id FK
         varchar name
+        double latitude "tambahan: titik pusat lokasi"
+        double longitude "tambahan: titik pusat lokasi"
         double min_latitude
         double max_latitude
         double min_longitude
@@ -79,6 +82,11 @@ erDiagram
         varchar notification_id PK
         varchar user_id FK
         varchar hotspot_id FK
+        varchar area_id FK "tambahan: lokasi yang terancam"
+        varchar kind "tambahan: Fire | Smoke"
+        int level "tambahan: 1 perhatian, 2 waspada, 3 bahaya"
+        int eta_hours "tambahan: perkiraan jam tiba"
+        double distance_km "tambahan: jarak (api: terdekat; asap: ke sumber)"
         varchar title
         text message
         timestamp created_at

@@ -123,7 +123,7 @@ public class RegionAndAreaTests
     [Fact]
     public void MonitoringArea_Contains()
     {
-        var a = new MonitoringArea { MinLatitude = -1, MaxLatitude = 1, MinLongitude = 100, MaxLongitude = 102 };
+        var a = new MonitoringArea("U-1", "Rumah", 0, 101, 10);
         Assert.True(a.Contains(0, 101));
         Assert.False(a.Contains(2, 101));
     }

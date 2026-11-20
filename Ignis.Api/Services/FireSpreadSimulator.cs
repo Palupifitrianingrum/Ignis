@@ -4,12 +4,18 @@ namespace Ignis.Api.Services;
 
 /// <summary>Satu langkah waktu simulasi: sel-sel yang terbakar (kumulatif) pada jam ke-<see cref="HourOffset"/>.</summary>
 /// <param name="NewCells">Jumlah sel yang baru menyala pada jam ini (jam 0 = 1, titik asal).</param>
-public sealed record SimulationFrame(int HourOffset, IReadOnlyList<Coordinate> BurningCells, double AreaHa, int NewCells = 0);
+public sealed record SimulationFrame(int HourOffset, IReadOnlyList<Coordinate> BurningCells, double AreaHa, int NewCells = 0)
+{
+    /// <summary>Sel asap pada jam ini (grid kasar, lihat <see cref="SmokePlumeModel"/>). Kosong pada jam 0.</summary>
+    public IReadOnlyList<SmokeCell> SmokeCells { get; init; } = Array.Empty<SmokeCell>();
+}
 
 /// <summary>Hasil lengkap satu simulasi: kondisi yang dipakai, ukuran sel, dan frame per jam.</summary>
 /// <param name="SpreadDirection">Arah RAMBATAN api dalam derajat (0 = utara, 90 = timur), yaitu kebalikan arah asal angin.</param>
 /// <param name="WindFromDirection">Arah ASAL angin menurut konvensi meteorologi (270 = angin dari barat).</param>
 /// <param name="Truncated">True bila jumlah sel mencapai batas <see cref="FireSpreadSimulator.MaxCells"/> sehingga rambatan berhenti dibatasi model.</param>
+/// <param name="SmokeCellSizeDegrees">Sisi sel asap (derajat); posisi sel asap = asal + baris/kolom × nilai ini.</param>
+/// <param name="SmokeMaxLevel">Level asap tertinggi yang muncul selama simulasi (0 = tidak ada, 1 ringan, 2 sedang, 3 pekat).</param>
 public sealed record SimulationResult(
     string HotspotId,
     double OriginLatitude,
@@ -26,6 +32,8 @@ public sealed record SimulationResult(
     double CellAreaHa,
     int MaxCells,
     bool Truncated,
+    double SmokeCellSizeDegrees,
+    int SmokeMaxLevel,
     IReadOnlyList<SimulationFrame> Frames);
 
 /// <summary>
@@ -84,6 +92,7 @@ public sealed class FireSpreadSimulator
             BuildFrame(0, origin.Latitude, origin.Longitude, burning, cellAreaHa, newCells: 1)
         };
         bool truncated = false;
+        var history = new List<IReadOnlyList<(int Row, int Col)>> { burning.ToArray() };   // sel api per jam, untuk sumber asap
 
         for (int h = 1; h <= totalHours; h++)
         {
@@ -128,7 +137,13 @@ public sealed class FireSpreadSimulator
             if (burning.Count >= MaxCells) truncated = true;
 
             frames.Add(BuildFrame(h, origin.Latitude, origin.Longitude, burning, cellAreaHa, ignited.Count));
+            history.Add(burning.ToArray());
         }
+
+        // Asap: dipancarkan dari sel yang terbakar, terbawa angin ke arah rambatan, menyebar, dan meluruh (lebih cepat saat hujan).
+        var smoke = SmokePlumeModel.Compute(origin.Latitude, history, weather.WindSpeed, spreadDirection, weather.Precipitation);
+        for (int h = 0; h < frames.Count; h++) frames[h] = frames[h] with { SmokeCells = smoke[h] };
+        int smokeMaxLevel = smoke.SelectMany(f => f).Select(c => c.Level).DefaultIfEmpty(0).Max();
 
         return new SimulationResult(
             origin.Id,
@@ -146,6 +161,8 @@ public sealed class FireSpreadSimulator
             cellAreaHa,
             MaxCells,
             truncated,
+            SmokePlumeModel.CellStepDegrees,
+            smokeMaxLevel,
             frames);
     }
 

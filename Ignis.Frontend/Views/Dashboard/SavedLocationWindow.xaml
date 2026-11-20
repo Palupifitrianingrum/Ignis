@@ -1,0 +1,69 @@
+<Window x:Class="Ignis.Frontend.Views.Dashboard.SavedLocationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lokasi Tersimpan — Ignis"
+        Width="500" Height="590"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Poppins, Segoe UI"
+        Background="{StaticResource Bg}">
+    <Grid Margin="28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock x:Name="TxtTitle" Style="{StaticResource H1}" FontSize="22" Text="Tambah Lokasi"/>
+            <TextBlock Style="{StaticResource Lbl}" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Text="Anda akan diberi tahu bila simulasi memperkirakan api atau asap mendekati lokasi ini dalam radius yang Anda tentukan."/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Lbl}" Text="Nama lokasi (mis. Rumah, Kantor, Kebun)"/>
+                    <TextBox x:Name="TxtName" MaxLength="120"/>
+
+                    <Grid Margin="0,2,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Lbl}" Text="Lintang (latitude)"/>
+                            <TextBox x:Name="TxtLat" ToolTip="Contoh: -2.9871 (negatif = selatan)"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource Lbl}" Text="Bujur (longitude)"/>
+                            <TextBox x:Name="TxtLon" ToolTip="Contoh: 104.6320"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Button x:Name="BtnPick" Content="Pilih titik langsung di peta" Style="{StaticResource BtnGhost}"
+                            HorizontalAlignment="Left" Margin="0,10,0,0" Click="Pick_Click"
+                            ToolTip="Tutup dialog ini lalu klik lokasi Anda di peta"/>
+
+                    <TextBlock x:Name="TxtRadiusLabel" Style="{StaticResource Lbl}" Margin="0,16,0,0"/>
+                    <Slider x:Name="SldRadius" Minimum="1" Maximum="50" Value="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                            ValueChanged="Radius_ValueChanged" Margin="0,4,0,0"/>
+                    <Grid>
+                        <TextBlock Text="1 km" FontSize="11" Foreground="{StaticResource Muted}" HorizontalAlignment="Left"/>
+                        <TextBlock Text="50 km" FontSize="11" Foreground="{StaticResource Muted}" HorizontalAlignment="Right"/>
+                    </Grid>
+                    <TextBlock Foreground="{StaticResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Text="Radius ini berlaku untuk api dan asap: Anda diberi tahu bila tepi api atau asap hasil simulasi masuk ke dalamnya."/>
+
+                    <TextBlock x:Name="TxtError" Foreground="#B91C1C" FontSize="12.5" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed"/>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Batal" Style="{StaticResource BtnGhost}" Click="Cancel_Click"/>
+            <Button x:Name="BtnSave" Content="Simpan" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="Save_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

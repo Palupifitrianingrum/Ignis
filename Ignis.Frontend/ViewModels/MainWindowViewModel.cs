@@ -21,6 +21,7 @@ namespace Ignis.Frontend.ViewModels
         private readonly IgnisApiClient _api;
         private readonly AdminWorkspace _workspace;
         private readonly DispatcherTimer _simulationTimer;
+        private bool _isRequiringLogin;
 
         private IReadOnlyList<HotspotDto> _allHotspots = Array.Empty<HotspotDto>();
         private IReadOnlyList<PredictionDto> _allPredictions = Array.Empty<PredictionDto>();
@@ -355,7 +356,38 @@ namespace Ignis.Frontend.ViewModels
                 UserEmail = string.Empty;
                 UserRole = string.Empty;
                 ResetDashboardData();
+                PromptLoginOrShutdown();
             }
+        }
+
+        private void PromptLoginOrShutdown()
+        {
+            if (_isRequiringLogin || _api.IsLoggedIn || System.Windows.Application.Current is not { } app) return;
+            _isRequiringLogin = true;
+            app.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    if (_api.IsLoggedIn) return;
+                    var mainWin = app.MainWindow;
+                    app.ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
+                    mainWin?.Hide();
+
+                    var ok = _dialogService.ShowLoginDialog() == true && _api.IsLoggedIn;
+                    if (!ok)
+                    {
+                        app.Shutdown();
+                        return;
+                    }
+
+                    app.ShutdownMode = System.Windows.ShutdownMode.OnLastWindowClose;
+                    mainWin?.Show();
+                }
+                finally
+                {
+                    _isRequiringLogin = false;
+                }
+            }));
         }
 
         [RelayCommand]

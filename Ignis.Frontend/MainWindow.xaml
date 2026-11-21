@@ -8,6 +8,7 @@
         xmlns:admin="clr-namespace:Ignis.Frontend.Views.Admin"
         mc:Ignorable="d"
         Title="IGNIS - Wildfire Monitoring &amp; Prediction"
+        Icon="/Resources/Icons/logo.ico"
         Height="820" Width="1280"
         MinHeight="680" MinWidth="1024"
         Background="#D8EEDC"

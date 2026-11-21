@@ -110,13 +110,18 @@
                     <!-- ================= EXPANDABLE CONTENT (Opacity 0 by default, reveals on hover) ================= -->
                     <StackPanel x:Name="ExpandedContent" Opacity="0" Orientation="Vertical">
 
-                        <!-- BRANDING HEADER: Ignis Text Title (Logo emptied for now) -->
-                        <TextBlock Text="Ignis"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Foreground="#FFFFFF"
+                        <!-- BRANDING HEADER: Ignis Logo + Title -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,22">
+                            <Image Source="/Resources/Icons/logo%20transparan.png"
+                                   Width="28" Height="28"
                                    VerticalAlignment="Center"
-                                   Margin="4,0,0,22"/>
+                                   Margin="0,0,10,0"/>
+                            <TextBlock Text="Ignis"
+                                       FontSize="22"
+                                       FontWeight="Bold"
+                                       Foreground="#FFFFFF"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
 
                         <!-- MENU 0: Admin Dashboard (Visible only for Admin role) -->
                         <Button Command="{Binding OpenAdminCommand}"

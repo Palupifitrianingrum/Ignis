@@ -1,15 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Ignis.Frontend.Views.Shared
 {
@@ -20,15 +12,27 @@ namespace Ignis.Frontend.Views.Shared
     {
         public event Action<string>? PasswordChanged;
         public event Action? EnterPressed;
+        private bool _syncing;
 
         public IconPasswordBox()
         {
             InitializeComponent();
         }
 
-        public void FocusInput() => InnerPassowrdBox.Focus();
+        public void FocusInput()
+        {
+            if (IsPasswordVisible)
+            {
+                InnerVisibleTextBox.Focus();
+                InnerVisibleTextBox.CaretIndex = InnerVisibleTextBox.Text.Length;
+            }
+            else
+            {
+                InnerPassowrdBox.Focus();
+            }
+        }
 
-        private void InnerPassowrdBox_KeyDown(object sender, KeyEventArgs e)
+        private void InnerInput_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -38,7 +42,7 @@ namespace Ignis.Frontend.Views.Shared
         }
 
         public static readonly DependencyProperty PlaceholderProperty =
-        DependencyProperty.Register(nameof(Placeholder), typeof(string), typeof(IconPasswordBox));
+            DependencyProperty.Register(nameof(Placeholder), typeof(string), typeof(IconPasswordBox));
 
         public string Placeholder
         {
@@ -47,7 +51,7 @@ namespace Ignis.Frontend.Views.Shared
         }
 
         public static readonly DependencyProperty HasPasswordProperty =
-        DependencyProperty.Register(nameof(HasPassword), typeof(bool), typeof(IconPasswordBox), new PropertyMetadata(false));
+            DependencyProperty.Register(nameof(HasPassword), typeof(bool), typeof(IconPasswordBox), new PropertyMetadata(false));
 
         public bool HasPassword
         {
@@ -55,10 +59,41 @@ namespace Ignis.Frontend.Views.Shared
             private set => SetValue(HasPasswordProperty, value);
         }
 
+        public static readonly DependencyProperty IsPasswordVisibleProperty =
+            DependencyProperty.Register(nameof(IsPasswordVisible), typeof(bool), typeof(IconPasswordBox), new PropertyMetadata(false));
+
+        public bool IsPasswordVisible
+        {
+            get => (bool)GetValue(IsPasswordVisibleProperty);
+            set => SetValue(IsPasswordVisibleProperty, value);
+        }
+
         private void InnerPassowrdBox_PasswordChanged(object sender, RoutedEventArgs e)
         {
+            if (_syncing) return;
+            _syncing = true;
+            InnerVisibleTextBox.Text = InnerPassowrdBox.Password;
+            _syncing = false;
+
             HasPassword = InnerPassowrdBox.Password.Length > 0;
             PasswordChanged?.Invoke(InnerPassowrdBox.Password);
+        }
+
+        private void InnerVisibleTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_syncing) return;
+            _syncing = true;
+            InnerPassowrdBox.Password = InnerVisibleTextBox.Text;
+            _syncing = false;
+
+            HasPassword = InnerVisibleTextBox.Text.Length > 0;
+            PasswordChanged?.Invoke(InnerVisibleTextBox.Text);
+        }
+
+        private void ToggleVisibility_Click(object sender, RoutedEventArgs e)
+        {
+            IsPasswordVisible = !IsPasswordVisible;
+            FocusInput();
         }
     }
 }

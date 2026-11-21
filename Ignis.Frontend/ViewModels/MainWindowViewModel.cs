@@ -410,20 +410,6 @@ namespace Ignis.Frontend.ViewModels
         }
 
         [RelayCommand]
-        private void OpenSettingsFromMenu()
-        {
-            IsProfileMenuOpen = false;
-            _dialogService.ShowSettingsWindow();
-        }
-
-        [RelayCommand]
-        private void OpenAdminFromMenu()
-        {
-            IsProfileMenuOpen = false;
-            OpenAdminWindow();
-        }
-
-        [RelayCommand]
         private void Logout()
         {
             IsProfileMenuOpen = false;

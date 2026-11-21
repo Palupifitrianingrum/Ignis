@@ -9,18 +9,13 @@
     <!-- Top Row: IGNIS Logo + Search Bar + Filter Button -->
     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
         
-        <!-- IGNIS Brand Logo + Title -->
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,18,0">
-            <Image Source="/Resources/Icons/logo%20transparan.png"
-                   Width="24" Height="24"
+        <!-- IGNIS Brand Title -->
+        <TextBlock Text="IGNIS"
+                   FontSize="18"
+                   FontWeight="Black"
+                   Foreground="#0F172A"
                    VerticalAlignment="Center"
-                   Margin="0,0,8,0"/>
-            <TextBlock Text="IGNIS"
-                       FontSize="18"
-                       FontWeight="Black"
-                       Foreground="#0F172A"
-                       VerticalAlignment="Center"/>
-        </StackPanel>
+                   Margin="0,0,18,0"/>
 
         <!-- Search Bar Pill -->
         <Border Background="#FFFFFF"

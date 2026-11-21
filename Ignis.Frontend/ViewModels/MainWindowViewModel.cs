@@ -21,6 +21,7 @@ namespace Ignis.Frontend.ViewModels
         private readonly IgnisApiClient _api;
         private readonly AdminWorkspace _workspace;
         private readonly DispatcherTimer _simulationTimer;
+        private readonly DispatcherTimer _autoRefreshTimer;
         private bool _isRequiringLogin;
 
         private IReadOnlyList<HotspotDto> _allHotspots = Array.Empty<HotspotDto>();
@@ -56,15 +57,68 @@ namespace Ignis.Frontend.ViewModels
         [ObservableProperty]
         private string activeNavTab = "Dashboard";
 
-        // Quick filter chips
+        // Quick filter chips & popup
+        [ObservableProperty]
+        private bool isFilterMenuOpen;
+
+        // 1. Hotspot Classification
         [ObservableProperty]
         private bool isViirsActive = true;
 
         [ObservableProperty]
-        private bool isConfidenceActive = true;
+        private bool isManualActive = true;
 
         [ObservableProperty]
-        private bool isLast24HoursActive = true;
+        private bool isConfidenceActive = false;
+
+        public IReadOnlyList<string> StatusFilterOptions { get; } = new[] { "Semua Status", "Active", "Monitoring", "Resolved" };
+
+        [ObservableProperty]
+        private string selectedStatusFilter = "Semua Status";
+
+        partial void OnSelectedStatusFilterChanged(string value)
+        {
+            UpdateFilterCount();
+            ApplyFiltersAndRefreshView();
+        }
+
+        // 2. Time & Date
+        public IReadOnlyList<string> TimeFilterOptions { get; } = new[] { "Semua Waktu", "24 Jam Terakhir", "7 Hari Terakhir", "30 Hari Terakhir" };
+
+        [ObservableProperty]
+        private string selectedTimeFilter = "Semua Waktu";
+
+        partial void OnSelectedTimeFilterChanged(string value)
+        {
+            UpdateFilterCount();
+            ApplyFiltersAndRefreshView();
+        }
+
+        // 3. Geographic Filter
+        public IReadOnlyList<string> RegionFilterOptions { get; } = Region.Defaults.Select(r => r.Name).ToList();
+
+        [ObservableProperty]
+        private string selectedRegionFilter = Region.AllName;
+
+        partial void OnSelectedRegionFilterChanged(string value)
+        {
+            if (!string.IsNullOrWhiteSpace(value) && value != Region.AllName)
+            {
+                var region = Region.Defaults.FirstOrDefault(r => !r.IsAll && r.Name == value);
+                if (region != null)
+                {
+                    FocusLocationRequested?.Invoke(
+                        (region.MinLat + region.MaxLat) / 2.0,
+                        (region.MinLon + region.MaxLon) / 2.0,
+                        8);
+                }
+            }
+            UpdateFilterCount();
+            ApplyFiltersAndRefreshView();
+        }
+
+        [ObservableProperty]
+        private bool isLast24HoursActive = false;
 
         [ObservableProperty]
         private bool isConservationActive = false;
@@ -89,12 +143,16 @@ namespace Ignis.Frontend.ViewModels
         private string emergencyStatus = "Klik Profil untuk Login";
 
         [ObservableProperty]
-        private int filterBadgeCount = 3;
+        private int filterBadgeCount = 2;
 
-        // Sidebar: Saved & Recent Items
+        // Sidebar: Saved, Newest Hotspot & Recent Items
         [ObservableProperty]
         private int savedLocationsCount = 0;
 
+        [ObservableProperty]
+        private bool isNewestHotspotsExpanded;
+
+        public ObservableCollection<RecentLocationItem> NewestHotspots { get; } = new();
         public ObservableCollection<RecentLocationItem> RecentLocations { get; } = new();
 
         // Fire Risk Index
@@ -133,15 +191,52 @@ namespace Ignis.Frontend.ViewModels
 
             _api.SessionChanged += ApplySession;
             _workspace.Changed += OnWorkspaceChanged;
+            _workspace.SettingsChanged += OnSettingsChanged;
 
             _simulationTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(700)
             };
             _simulationTimer.Tick += OnSimulationTick;
+
+            _autoRefreshTimer = new DispatcherTimer();
+            _autoRefreshTimer.Tick += async (_, _) =>
+            {
+                if (_api.IsLoggedIn) await LoadDashboardDataAsync();
+            };
+
             InitNotifications();
 
             ApplySession();
+        }
+
+        private void OnSettingsChanged()
+        {
+            ConfigureAutoRefresh();
+            FocusDefaultRegion();
+            ApplyFiltersAndRefreshView();
+        }
+
+        private void ConfigureAutoRefresh()
+        {
+            _autoRefreshTimer.Stop();
+            var mins = _workspace.Settings.AutoRefreshMinutes;
+            if (mins > 0 && _api.IsLoggedIn)
+            {
+                _autoRefreshTimer.Interval = TimeSpan.FromMinutes(mins);
+                _autoRefreshTimer.Start();
+            }
+        }
+
+        private void FocusDefaultRegion()
+        {
+            var name = _workspace.Settings.DefaultRegionName;
+            if (string.IsNullOrWhiteSpace(name) || name == Region.AllName) return;
+            var region = Region.Defaults.FirstOrDefault(r => !r.IsAll && r.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (region != null)
+            {
+                FocusLocationRequested?.Invoke((region.MinLat + region.MaxLat) / 2.0, (region.MinLon + region.MaxLon) / 2.0, 8);
+            }
         }
 
         private void OnWorkspaceChanged()
@@ -194,7 +289,10 @@ namespace Ignis.Frontend.ViewModels
             HighRiskCount = 0;
             CriticalRiskCount = 0;
             StopUserFeatures();   // lokasi tersimpan dan notifikasi dikosongkan (logout / belum login)
+            _autoRefreshTimer.Stop();
             EmergencyStatus = "Klik Profil untuk Login";
+            IsNewestHotspotsExpanded = false;
+            NewestHotspots.Clear();
             RecentLocations.Clear();
             RaiseMapDataChanged();
         }
@@ -208,6 +306,55 @@ namespace Ignis.Frontend.ViewModels
             }
 
             IEnumerable<HotspotDto> filtered = _allHotspots;
+
+            if (_workspace.Settings.HideResolvedHotspots)
+            {
+                filtered = filtered.Where(h => h.Status != HotspotStatus.Resolved);
+            }
+
+            if (!IsViirsActive)
+            {
+                filtered = filtered.Where(h => h.Source != HotspotSource.Satellite);
+            }
+
+            if (!IsManualActive)
+            {
+                filtered = filtered.Where(h => h.Source != HotspotSource.Manual);
+            }
+
+            if (IsConfidenceActive)
+            {
+                filtered = filtered.Where(h => h.Confidence >= 70.0);
+            }
+
+            if (SelectedStatusFilter != "Semua Status" && Enum.TryParse<HotspotStatus>(SelectedStatusFilter, out var statusFilter))
+            {
+                filtered = filtered.Where(h => h.Status == statusFilter);
+            }
+
+            if (SelectedTimeFilter != "Semua Waktu")
+            {
+                var cutoff = SelectedTimeFilter switch
+                {
+                    "24 Jam Terakhir" => DateTime.Now.AddHours(-24),
+                    "7 Hari Terakhir" => DateTime.Now.AddDays(-7),
+                    "30 Hari Terakhir" => DateTime.Now.AddDays(-30),
+                    _ => DateTime.MinValue
+                };
+                if (cutoff > DateTime.MinValue)
+                {
+                    filtered = filtered.Where(h => h.DetectedAt >= cutoff);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(SelectedRegionFilter) && SelectedRegionFilter != Region.AllName)
+            {
+                var geoRegion = Region.Defaults.FirstOrDefault(r => !r.IsAll && r.Name == SelectedRegionFilter);
+                if (geoRegion != null)
+                {
+                    filtered = filtered.Where(h => geoRegion.Contains(h.Latitude, h.Longitude));
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
@@ -261,29 +408,107 @@ namespace Ignis.Frontend.ViewModels
                 ? $"Siaga Darurat • {activeCount} Hotspot Aktif"
                 : "Status Pantauan Aman";
 
-            RecentLocations.Clear();
-            foreach (var h in list.Take(8))
+            if (IsNewestHotspotsExpanded)
             {
-                var regionName = Region.Defaults.FirstOrDefault(r => !r.IsAll && r.Contains(h.Latitude, h.Longitude))?.Name ?? "Indonesia";
-                var pinColor = h.Status switch
-                {
-                    HotspotStatus.Active => "#EF4444",
-                    HotspotStatus.Monitoring => "#F59E0B",
-                    _ => "#10B981"
-                };
-
-                RecentLocations.Add(new RecentLocationItem
-                {
-                    Id = h.Id,
-                    Title = $"{h.Id} • {regionName}",
-                    Subtitle = string.Create(CultureInfo.InvariantCulture, $"{h.Details} • ({h.Latitude:0.00}, {h.Longitude:0.00})"),
-                    PinColorHex = pinColor,
-                    Latitude = h.Latitude,
-                    Longitude = h.Longitude
-                });
+                PopulateNewestHotspots(list);
             }
 
             RaiseMapDataChanged();
+        }
+
+        private void PopulateNewestHotspots(IEnumerable<HotspotDto> source)
+        {
+            NewestHotspots.Clear();
+            foreach (var h in source.Take(8))
+            {
+                NewestHotspots.Add(ToHotspotItem(h));
+            }
+        }
+
+        private static RecentLocationItem ToHotspotItem(HotspotDto h)
+        {
+            var regionName = Region.Defaults.FirstOrDefault(r => !r.IsAll && r.Contains(h.Latitude, h.Longitude))?.Name ?? "Indonesia";
+            var pinColor = h.Status switch
+            {
+                HotspotStatus.Active => "#EF4444",
+                HotspotStatus.Monitoring => "#F59E0B",
+                _ => "#10B981"
+            };
+
+            return new RecentLocationItem
+            {
+                Id = h.Id,
+                Title = $"{h.Id} • {regionName}",
+                Subtitle = string.Create(CultureInfo.InvariantCulture, $"{h.Details} • ({h.Latitude:0.00}, {h.Longitude:0.00})"),
+                PinColorHex = pinColor,
+                Latitude = h.Latitude,
+                Longitude = h.Longitude
+            };
+        }
+
+        [RelayCommand]
+        private async Task ToggleNewestHotspotsAsync()
+        {
+            IsNewestHotspotsExpanded = !IsNewestHotspotsExpanded;
+            if (!IsNewestHotspotsExpanded) return;
+
+            if (_allHotspots.Count == 0 && _api.IsLoggedIn)
+            {
+                await LoadDashboardDataAsync();
+            }
+            else
+            {
+                PopulateNewestHotspots(VisibleHotspots.Count > 0 ? VisibleHotspots : _allHotspots);
+            }
+        }
+
+        [RelayCommand]
+        private void SubmitSearch()
+        {
+            if (string.IsNullOrWhiteSpace(SearchText)) return;
+            var q = SearchText.Trim();
+
+            RecentLocationItem? entry = null;
+            var matchedHotspot = VisibleHotspots.FirstOrDefault();
+            var matchedRegion = Region.Defaults.FirstOrDefault(r => !r.IsAll && r.Name.Contains(q, StringComparison.OrdinalIgnoreCase));
+
+            if (matchedRegion != null)
+            {
+                double lat = (matchedRegion.MinLat + matchedRegion.MaxLat) / 2.0;
+                double lon = (matchedRegion.MinLon + matchedRegion.MaxLon) / 2.0;
+                FocusLocationRequested?.Invoke(lat, lon, 8);
+                entry = new RecentLocationItem
+                {
+                    Id = $"search-{matchedRegion.Name}",
+                    Title = matchedRegion.Name,
+                    Subtitle = $"Pencarian wilayah • {VisibleHotspots.Count} hotspot",
+                    PinColorHex = "#F28A1E",
+                    Latitude = lat,
+                    Longitude = lon
+                };
+            }
+            else if (matchedHotspot != null)
+            {
+                FocusLocationRequested?.Invoke(matchedHotspot.Latitude, matchedHotspot.Longitude, 11);
+                entry = ToHotspotItem(matchedHotspot);
+            }
+            else
+            {
+                entry = new RecentLocationItem
+                {
+                    Id = $"search-{q}",
+                    Title = q,
+                    Subtitle = "Pencarian lokasi / hotspot",
+                    PinColorHex = "#64748B",
+                    Latitude = 0.32,
+                    Longitude = 101.85
+                };
+            }
+
+            var existing = RecentLocations.FirstOrDefault(r => r.Title.Equals(entry.Title, StringComparison.OrdinalIgnoreCase));
+            if (existing != null) RecentLocations.Remove(existing);
+            RecentLocations.Insert(0, entry);
+            while (RecentLocations.Count > 10) RecentLocations.RemoveAt(RecentLocations.Count - 1);
         }
 
         private void RaiseMapDataChanged() =>
@@ -349,6 +574,8 @@ namespace Ignis.Frontend.ViewModels
                 UserRole = user.Role.ToString();
                 await LoadDashboardDataAsync();
                 await StartUserFeaturesAsync();   // lokasi tersimpan dan notifikasi (hanya pengguna terdaftar)
+                ConfigureAutoRefresh();
+                FocusDefaultRegion();
             }
             else
             {
@@ -446,9 +673,25 @@ namespace Ignis.Frontend.ViewModels
         }
 
         [RelayCommand]
+        private void ToggleFilterMenu()
+        {
+            IsProfileMenuOpen = false;
+            IsNotificationsOpen = false;
+            IsFilterMenuOpen = !IsFilterMenuOpen;
+        }
+
+        [RelayCommand]
         private void ToggleViirs()
         {
             IsViirsActive = !IsViirsActive;
+            UpdateFilterCount();
+            ApplyFiltersAndRefreshView();
+        }
+
+        [RelayCommand]
+        private void ToggleManual()
+        {
+            IsManualActive = !IsManualActive;
             UpdateFilterCount();
             ApplyFiltersAndRefreshView();
         }
@@ -477,13 +720,30 @@ namespace Ignis.Frontend.ViewModels
             ApplyFiltersAndRefreshView();
         }
 
+        [RelayCommand]
+        private void ResetFilters()
+        {
+            IsViirsActive = true;
+            IsManualActive = true;
+            IsConfidenceActive = false;
+            IsLast24HoursActive = false;
+            IsConservationActive = false;
+            SelectedStatusFilter = "Semua Status";
+            SelectedTimeFilter = "Semua Waktu";
+            SelectedRegionFilter = Region.AllName;
+            UpdateFilterCount();
+            ApplyFiltersAndRefreshView();
+        }
+
         private void UpdateFilterCount()
         {
             int count = 0;
             if (IsViirsActive) count++;
+            if (IsManualActive) count++;
             if (IsConfidenceActive) count++;
-            if (IsLast24HoursActive) count++;
-            if (IsConservationActive) count++;
+            if (SelectedStatusFilter != "Semua Status") count++;
+            if (SelectedTimeFilter != "Semua Waktu") count++;
+            if (SelectedRegionFilter != Region.AllName) count++;
             FilterBadgeCount = count;
         }
 

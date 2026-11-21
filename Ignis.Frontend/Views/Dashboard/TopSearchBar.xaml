@@ -72,7 +72,11 @@
                              FontSize="12"
                              Foreground="#0F172A"
                              VerticalAlignment="Stretch"
-                             VerticalContentAlignment="Center"/>
+                             VerticalContentAlignment="Center">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SubmitSearchCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
                 </Grid>
 
                 <!-- Shortcut Chip (Ctrl+K) -->
@@ -89,9 +93,10 @@
             </Grid>
         </Border>
 
-        <!-- Filter Button with Badge -->
+        <!-- Filter Button with Badge & Dropdown Popup -->
         <Grid Width="44" Height="44">
-            <Button Command="{Binding ToggleViirsCommand}"
+            <Button x:Name="FilterButton"
+                    Command="{Binding ToggleFilterMenuCommand}"
                     Width="44" Height="44"
                     Cursor="Hand"
                     ToolTip="Filter Layer &amp; Hotspot">
@@ -126,7 +131,7 @@
                 </Viewbox>
             </Button>
 
-            <!-- Orange Count Badge "3" -->
+            <!-- Orange Count Badge -->
             <Border Background="#F26500"
                     Width="16" Height="16"
                     CornerRadius="8"
@@ -141,6 +146,110 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"/>
             </Border>
+
+            <!-- Filter Options Popup -->
+            <Popup IsOpen="{Binding IsFilterMenuOpen, Mode=TwoWay}"
+                   PlacementTarget="{Binding ElementName=FilterButton}"
+                   Placement="Bottom"
+                   VerticalOffset="8"
+                   StaysOpen="False"
+                   AllowsTransparency="True">
+                <Border Background="#FFFFFF"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="16"
+                        Width="270"
+                        Margin="4">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Opacity="0.14" Color="#000000"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,12">
+                            <Button DockPanel.Dock="Right"
+                                    Command="{Binding ResetFiltersCommand}"
+                                    Content="Reset"
+                                    Foreground="#F26500"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Cursor="Hand"/>
+                            <TextBlock Text="FILTER HOTSPOT"
+                                       FontSize="11"
+                                       FontWeight="ExtraBold"
+                                       Foreground="#0F172A"
+                                       VerticalAlignment="Center"/>
+                        </DockPanel>
+
+                        <!-- 1. Hotspot Classification -->
+                        <TextBlock Text="HOTSPOT CLASSIFICATION"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#64748B"
+                                   Margin="0,0,0,6"/>
+
+                        <CheckBox Content="Hotspot Satelit (NASA FIRMS)"
+                                  IsChecked="{Binding IsViirsActive, Mode=OneWay}"
+                                  Command="{Binding ToggleViirsCommand}"
+                                  FontSize="12"
+                                  Foreground="#0F172A"
+                                  Margin="0,0,0,6"
+                                  Cursor="Hand"/>
+
+                        <CheckBox Content="Hotspot Manual (Petugas)"
+                                  IsChecked="{Binding IsManualActive, Mode=OneWay}"
+                                  Command="{Binding ToggleManualCommand}"
+                                  FontSize="12"
+                                  Foreground="#0F172A"
+                                  Margin="0,0,0,6"
+                                  Cursor="Hand"/>
+
+                        <CheckBox Content="Keyakinan Tinggi (≥ 70%)"
+                                  IsChecked="{Binding IsConfidenceActive, Mode=OneWay}"
+                                  Command="{Binding ToggleConfidenceCommand}"
+                                  FontSize="12"
+                                  Foreground="#0F172A"
+                                  Margin="0,0,0,8"
+                                  Cursor="Hand"/>
+
+                        <TextBlock Text="Status Hotspot" FontSize="11" Foreground="#475569" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding StatusFilterOptions}"
+                                  SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}"
+                                  FontSize="12"
+                                  Padding="8,5"
+                                  Margin="0,0,0,12"/>
+
+                        <Rectangle Height="1" Fill="#E2E8F0" Margin="0,0,0,12"/>
+
+                        <!-- 2. Time & Date -->
+                        <TextBlock Text="TIME &amp; DATE"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#64748B"
+                                   Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding TimeFilterOptions}"
+                                  SelectedItem="{Binding SelectedTimeFilter, Mode=TwoWay}"
+                                  FontSize="12"
+                                  Padding="8,5"
+                                  Margin="0,0,0,12"/>
+
+                        <Rectangle Height="1" Fill="#E2E8F0" Margin="0,0,0,12"/>
+
+                        <!-- 3. Geographic Filter -->
+                        <TextBlock Text="GEOGRAPHIC FILTER"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#64748B"
+                                   Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding RegionFilterOptions}"
+                                  SelectedItem="{Binding SelectedRegionFilter, Mode=TwoWay}"
+                                  FontSize="12"
+                                  Padding="8,5"
+                                  Margin="0"/>
+                    </StackPanel>
+                </Border>
+            </Popup>
         </Grid>
 
     </StackPanel>

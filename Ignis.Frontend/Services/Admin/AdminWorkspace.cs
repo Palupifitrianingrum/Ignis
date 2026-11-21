@@ -88,7 +88,7 @@ public sealed class AdminWorkspace
     public async Task<PredictionRow> GetOrPredictAsync(HotspotRow h)
     {
         var p = new PredictionRow(await _backend.GetOrPredictAsync(h.Id));
-        if (Predictions.All(x => x.Id != p.Id)) await ReloadAsync();   // prediksi baru dibuat di backend
+        if (_backend.IsAdmin && Predictions.All(x => x.Id != p.Id)) await ReloadAsync();   // prediksi baru dibuat di backend
         return p;
     }
 

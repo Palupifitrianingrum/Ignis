@@ -58,7 +58,7 @@
                             <c:InfoRow x:Name="PArea" Label="Estimasi Luas"/>
                             <c:InfoRow x:Name="PHours" Label="Estimasi Waktu"/>
                             <c:InfoRow x:Name="PRisk" Label="Tingkat Risiko"/>
-                            <Button Content="Hitung Ulang Prediksi" Style="{StaticResource BtnGhost}" Margin="0,4,0,0" Click="Recalc_Click"/>
+                            <Button x:Name="BtnRecalc" Content="Hitung Ulang Prediksi" Style="{StaticResource BtnGhost}" Margin="0,4,0,0" Click="Recalc_Click"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

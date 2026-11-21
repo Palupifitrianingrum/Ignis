@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using Ignis.Frontend.Models.Admin;
 using Ignis.Frontend.Services.Admin;
+using Ignis.Frontend.Services.Backend;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Ignis.Frontend.Views.Admin;
 
@@ -15,8 +17,16 @@ public partial class HotspotDetailWindow : Window
     {
         InitializeComponent();
         _h = h;
-        BtnEdit.IsEnabled = BtnDel.IsEnabled = h.IsEditable;   // IsEditable berasal dari Hotspot.IsEditable (polimorfik)
-        BtnEdit.ToolTip = BtnDel.ToolTip = h.IsEditable ? null : "Hotspot satelit bersumber dari API dan tidak dapat diubah/dihapus.";
+        var isAdmin = App.Services.GetRequiredService<IgnisApiClient>().IsAdmin;
+        if (!isAdmin)
+        {
+            BtnEdit.Visibility = BtnDel.Visibility = BtnRecalc.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            BtnEdit.IsEnabled = BtnDel.IsEnabled = h.IsEditable;   // IsEditable berasal dari Hotspot.IsEditable (polimorfik)
+            BtnEdit.ToolTip = BtnDel.ToolTip = h.IsEditable ? null : "Hotspot satelit bersumber dari API dan tidak dapat diubah/dihapus.";
+        }
         Loaded += async (_, _) => await SafeFillAsync();
     }
 

@@ -1,4 +1,4 @@
-﻿using Ignis.Frontend.ViewModels.Auth;
+using Ignis.Frontend.ViewModels.Auth;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -39,6 +39,16 @@ namespace Ignis.Frontend.Views.Auth
         {
             if (DataContext is RegisterViewModel vm)
                 vm.ConfirmPassword = password;
+        }
+
+        private void NameInput_EnterPressed() => EmailInput.FocusInput();
+        private void EmailInput_EnterPressed() => PasswordInput.FocusInput();
+        private void PasswordInput_EnterPressed() => ConfirmPasswordInput.FocusInput();
+
+        private void ConfirmPasswordInput_EnterPressed()
+        {
+            if (DataContext is RegisterViewModel vm && vm.RegisterCommand.CanExecute(null))
+                vm.RegisterCommand.Execute(null);
         }
     }
 }

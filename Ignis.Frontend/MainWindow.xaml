@@ -294,7 +294,7 @@
 
         <!-- Layer 5: Admin Dashboard (navigasi di dalam window yang sama) -->
         <admin:AdminDashboardView Panel.ZIndex="200"
-                                  Visibility="{Binding IsAdminDashboardOpen, Converter={StaticResource B2V}}"/>
+                                  Visibility="{Binding IsAdminDashboardOpen, Converter={StaticResource B2V}, FallbackValue=Collapsed}"/>
 
     </Grid>
 </Window>

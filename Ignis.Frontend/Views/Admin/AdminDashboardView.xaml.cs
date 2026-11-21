@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Ignis.Frontend.Services.Admin;
+using Ignis.Frontend.Services.Backend;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Ignis.Frontend.Views.Admin;
 
@@ -11,12 +13,14 @@ public partial class AdminDashboardView : UserControl
 {
     private readonly DispatcherTimer _timer = new();
     private readonly AdminWorkspace ws = AdminWorkspace.Current;
+    private readonly IgnisApiClient _api = App.Services.GetRequiredService<IgnisApiClient>();
 
     public AdminDashboardView()
     {
         InitializeComponent();
         _timer.Tick += async (_, _) =>
         {
+            if (!_api.IsAdmin) { _timer.Stop(); return; }
             try { await ws.SyncAsync(); }
             catch (Exception ex)
             {
@@ -34,7 +38,7 @@ public partial class AdminDashboardView : UserControl
         NavDashboard.IsChecked = true;
         IsVisibleChanged += async (_, e) =>
         {
-            if (e.NewValue is true)
+            if (e.NewValue is true && _api.IsAdmin)
             {
                 ScheduleSync();
                 await LoadAsync();
@@ -48,6 +52,7 @@ public partial class AdminDashboardView : UserControl
 
     private async Task LoadAsync()
     {
+        if (!_api.IsAdmin) return;
         try { await ws.ReloadAsync(); }
         catch (Exception ex)
         {

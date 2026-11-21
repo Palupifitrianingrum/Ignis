@@ -112,10 +112,15 @@
 
                         <!-- BRANDING HEADER: Ignis Logo + Title -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,22">
-                            <Image Source="/Resources/Icons/logo%20transparan.png"
-                                   Width="28" Height="28"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,10,0"/>
+                            <Border Background="{StaticResource Bg}"
+                                    CornerRadius="10"
+                                    Width="38" Height="38"
+                                    Padding="4"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,10,0">
+                                <Image Source="/Resources/Icons/logo%20transparan.png"
+                                       Stretch="Uniform"/>
+                            </Border>
                             <TextBlock Text="Ignis"
                                        FontSize="22"
                                        FontWeight="Bold"

@@ -775,6 +775,12 @@ namespace Ignis.Frontend.ViewModels
         [RelayCommand]
         private void LocateMe()
         {
+            var target = SavedLocations.FirstOrDefault();
+            if (target != null)
+            {
+                FocusLocationRequested?.Invoke(target.Latitude, target.Longitude, 12);
+                return;
+            }
             LocateMeRequested?.Invoke();
         }
 

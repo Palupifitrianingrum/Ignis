@@ -20,7 +20,20 @@
                             <TextBlock Style="{StaticResource H2}" Text="Aplikasi Desktop"/>
                             <TextBlock Style="{StaticResource Lbl}" Text="Interval Sinkronisasi Otomatis"/>
                             <ComboBox x:Name="CmbInterval"><ComboBoxItem>Setiap 1 jam</ComboBoxItem><ComboBoxItem>Setiap 3 jam</ComboBoxItem><ComboBoxItem>Setiap 6 jam</ComboBoxItem><ComboBoxItem>Setiap 12 jam</ComboBoxItem></ComboBox>
-                            <TextBlock Style="{StaticResource Lbl}" Text="API Key Peta CARTO (opsional; kosong = peta Esri)"/><PasswordBox x:Name="PwdCarto"/>
+
+                            <Expander Header="Advanced Options (Pengaturan Lanjutan)"
+                                      Foreground="{StaticResource Ink}"
+                                      FontWeight="SemiBold"
+                                      FontSize="13"
+                                      Margin="0,8,0,0">
+                                <StackPanel Margin="0,10,0,0">
+                                    <TextBlock Style="{StaticResource Lbl}" Text="Alamat Server API (Ignis.Api)"/>
+                                    <TextBox x:Name="TxtApiUrl" ToolTip="Contoh: http://localhost:5000/"/>
+
+                                    <TextBlock Style="{StaticResource Lbl}" Text="API Key Peta CARTO (opsional; kosong = peta Esri)"/>
+                                    <PasswordBox x:Name="PwdCarto"/>
+                                </StackPanel>
+                            </Expander>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Card}">

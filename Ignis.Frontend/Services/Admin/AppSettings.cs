@@ -16,6 +16,9 @@ public class AppSettings
     public int IntervalIndex { get; set; } = 0; // 0:1 jam, 1:3 jam, 2:6 jam, 3:12 jam
     public string CartoKey { get; set; } = string.Empty;   // API key basemap CARTO (opsional)
     public bool NotificationsEnabled { get; set; } = true;
+    public string DefaultRegionName { get; set; } = "Riau";
+    public bool HideResolvedHotspots { get; set; } = false;
+    public int AutoRefreshMinutes { get; set; } = 0;       // 0 = Manual, 5, 15, 30
 
     /// <summary>Alamat dasar Ignis.Api. Env IGNIS_API_URL menimpa (berguna untuk menunjuk ke server tanpa mengubah file).</summary>
     public string ApiBaseUrl { get; set; } = "http://localhost:5000/";

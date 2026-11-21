@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -18,9 +18,22 @@ namespace Ignis.Frontend.Views.Shared
     /// </summary>
     public partial class IconTextBox : UserControl
     {
+        public event Action? EnterPressed;
+
         public IconTextBox()
         {
             InitializeComponent();
+        }
+
+        public void FocusInput() => InnerTextBox.Focus();
+
+        private void InnerTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                EnterPressed?.Invoke();
+            }
         }
 
         public static readonly DependencyProperty InputTextProperty = DependencyProperty.Register(nameof(InputText), typeof(string), typeof(IconTextBox), 

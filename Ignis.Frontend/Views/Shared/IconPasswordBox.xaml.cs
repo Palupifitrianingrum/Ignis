@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -19,9 +19,22 @@ namespace Ignis.Frontend.Views.Shared
     public partial class IconPasswordBox : UserControl
     {
         public event Action<string>? PasswordChanged;
+        public event Action? EnterPressed;
+
         public IconPasswordBox()
         {
             InitializeComponent();
+        }
+
+        public void FocusInput() => InnerPassowrdBox.Focus();
+
+        private void InnerPassowrdBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                EnterPressed?.Invoke();
+            }
         }
 
         public static readonly DependencyProperty PlaceholderProperty =

@@ -37,14 +37,16 @@
                     </TextBlock.Style>
                 </TextBlock>
 
-                <TextBox Text="{Binding InputText, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <TextBox x:Name="InnerTextBox"
+                         Text="{Binding InputText, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          Background="Transparent"
                          BorderThickness="0"
                          Padding="0"
                          Margin="0"
                          FontSize="14"
                          VerticalAlignment="Stretch"
-                         VerticalContentAlignment="Center"/>
+                         VerticalContentAlignment="Center"
+                         KeyDown="InnerTextBox_KeyDown"/>
             </Grid>
         </Grid>
     </Border>

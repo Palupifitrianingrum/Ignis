@@ -56,17 +56,18 @@ public sealed class AdminWorkspace
     // ---------- Muat ulang ----------
     public async Task ReloadAsync()
     {
-        var hotspots = await _backend.GetHotspotsAsync();
-        var predictions = await _backend.GetPredictionsAsync();
-        var users = await _backend.GetUsersAsync();
-        var activities = await _backend.GetActivitiesAsync();
+        var hotspotsTask = _backend.GetHotspotsAsync();
+        var predictionsTask = _backend.GetPredictionsAsync();
+        var usersTask = _backend.GetUsersAsync();
+        var activitiesTask = _backend.GetActivitiesAsync();
+        await Task.WhenAll(hotspotsTask, predictionsTask, usersTask, activitiesTask);
 
-        Hotspots = hotspots.Select(h => new HotspotRow(h)).ToList();
-        Predictions = predictions.Select(p => new PredictionRow(p)).ToList();
-        Users = users.Select(u => new UserRow(u)).ToList();
+        Hotspots = hotspotsTask.Result.Select(h => new HotspotRow(h)).ToList();
+        Predictions = predictionsTask.Result.Select(p => new PredictionRow(p)).ToList();
+        Users = usersTask.Result.Select(u => new UserRow(u)).ToList();
 
         Activities.Clear();
-        foreach (var a in activities) Activities.Add(a);
+        foreach (var a in activitiesTask.Result) Activities.Add(a);
         Changed?.Invoke();
     }
 
@@ -78,8 +79,8 @@ public sealed class AdminWorkspace
                          && (status == null || h.Status == status));
 
     // ---------- Hotspot ----------
-    public async Task AddManualAsync(ManualHotspotRequest request) { await _backend.AddManualHotspotAsync(request); await ReloadAsync(); }
-    public async Task UpdateManualAsync(string id, ManualHotspotRequest request) { await _backend.UpdateManualHotspotAsync(id, request); await ReloadAsync(); }
+    public async Task AddManualAsync(ManualHotspotRequest request) { await _backend.AddManualHotspotAsync(request); _ = ReloadAsync(); }
+    public async Task UpdateManualAsync(string id, ManualHotspotRequest request) { await _backend.UpdateManualHotspotAsync(id, request); _ = ReloadAsync(); }
     public async Task DeleteHotspotAsync(string id) { await _backend.DeleteHotspotAsync(id); await ReloadAsync(); }
 
     // ---------- Cuaca & prediksi ----------

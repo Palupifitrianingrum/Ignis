@@ -20,20 +20,30 @@ public static class HotspotEndpoints
             await svc.GetByIdAsync(id) is { } h ? Results.Ok(h.ToDto()) : Results.NotFound());
 
         // Fitur utama tugas OOP: tambah hotspot manual (lihat HotspotService.AddManualAsync + hierarki Hotspot).
-        // Setelah hotspot manual ditambah/diubah, lokasi pengguna di sekitarnya langsung diperiksa (notifikasi).
+        // Setelah hotspot manual ditambah/diubah, evaluasi notifikasi dijalankan di background agar response cepat.
         admin.MapPost("/hotspots/manual", async (ManualHotspotRequest req, HotspotService svc,
-                                                 NotificationService notifications, ILogger<NotificationService> log) =>
+                                                 IServiceScopeFactory scopeFactory, ILogger<NotificationService> log) =>
         {
             var saved = await svc.AddManualAsync(req);
-            await NotificationEndpoints.TryEvaluateAsync(() => notifications.EvaluateHotspotAsync(saved.Id), log);
+            _ = Task.Run(async () =>
+            {
+                using var scope = scopeFactory.CreateScope();
+                var notifications = scope.ServiceProvider.GetRequiredService<NotificationService>();
+                await NotificationEndpoints.TryEvaluateAsync(() => notifications.EvaluateHotspotAsync(saved.Id), log);
+            });
             return Results.Created($"/api/hotspots/{saved.Id}", saved.ToDto());
         });
 
         admin.MapPut("/hotspots/{id}", async (string id, ManualHotspotRequest req, HotspotService svc,
-                                              NotificationService notifications, ILogger<NotificationService> log) =>
+                                              IServiceScopeFactory scopeFactory, ILogger<NotificationService> log) =>
         {
             var updated = await svc.UpdateManualAsync(id, req);
-            await NotificationEndpoints.TryEvaluateAsync(() => notifications.EvaluateHotspotAsync(updated.Id), log);
+            _ = Task.Run(async () =>
+            {
+                using var scope = scopeFactory.CreateScope();
+                var notifications = scope.ServiceProvider.GetRequiredService<NotificationService>();
+                await NotificationEndpoints.TryEvaluateAsync(() => notifications.EvaluateHotspotAsync(updated.Id), log);
+            });
             return Results.Ok(updated.ToDto());
         });
 

@@ -64,6 +64,8 @@ public partial class HotspotFormWindow : Window
             TxtReporter.Text.Trim(), TxtNote.Text.Trim(),
             (HotspotStatus)Math.Max(0, CmbStatus.SelectedIndex));
 
+        var btn = sender as System.Windows.Controls.Button;
+        if (btn != null) btn.IsEnabled = false;
         try
         {
             // Aturan domain divalidasi ulang di backend (entity ManualHotspot); pelanggaran kembali sebagai pesan error.
@@ -73,6 +75,7 @@ public partial class HotspotFormWindow : Window
         }
         catch (Exception ex)
         {
+            if (btn != null) btn.IsEnabled = true;
             Err("Gagal menyimpan hotspot: " + ex.Message);
         }
     }

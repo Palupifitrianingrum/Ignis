@@ -7,11 +7,15 @@
         <Grid.ColumnDefinitions><ColumnDefinition Width="248"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <Border Background="{StaticResource Dark}" Padding="16,24">
             <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="8,0,0,20">
-                    <Canvas Width="30" Height="36">
-                        <Path Fill="{StaticResource Orange}" Data="M16,1 C19,8 27,11 27,21 A12,12 0 0 1 3,21 C3,15 7,12 10,9 C10,13 12,15 14,15 C13,10 13,6 16,1 Z"/>
-                        <Path Fill="{StaticResource Green}" Data="M3,22 A12,12 0 0 0 27,22 C22,26 13,27 3,22 Z"/>
-                    </Canvas>
+                <StackPanel Orientation="Horizontal" Margin="8,0,0,20" VerticalAlignment="Center">
+                    <Border Background="{StaticResource Bg}"
+                            CornerRadius="10"
+                            Width="38" Height="38"
+                            Padding="4"
+                            VerticalAlignment="Center">
+                        <Image Source="/Resources/Icons/logo%20transparan.png"
+                               Stretch="Uniform"/>
+                    </Border>
                     <TextBlock Text="IGNIS" Foreground="#F6F4EF" FontSize="24" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <RadioButton x:Name="NavDashboard" Style="{StaticResource Nav}" GroupName="nav" Tag="Dashboard" Content="Dashboard" Checked="Nav_Checked"/>

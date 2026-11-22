@@ -14,9 +14,27 @@
         </UniformGrid>
         <Border Style="{StaticResource Card}">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Style="{StaticResource H2}" Text="Laporan Lapangan"/>
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                    <Button x:Name="BtnDeleteSelected" DockPanel.Dock="Right" Content="Hapus Terpilih"
+                            Style="{StaticResource BtnSmall}" Background="#DC2626" Foreground="#FFFFFF"
+                            Visibility="Collapsed" Click="DeleteSelected_Click"/>
+                    <TextBlock Style="{StaticResource H2}" Text="Laporan Lapangan" VerticalAlignment="Center" Margin="0"/>
+                </DockPanel>
                 <DataGrid x:Name="GridManual">
                     <DataGrid.Columns>
+                        <DataGridTemplateColumn Width="44">
+                            <DataGridTemplateColumn.Header>
+                                <CheckBox x:Name="ChkSelectAll" IsThreeState="False" Click="SelectAll_Click"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="Pilih semua"/>
+                            </DataGridTemplateColumn.Header>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Click="RowCheck_Click"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="80"/>
                         <DataGridTextColumn Header="Koordinat" Binding="{Binding CoordText}" Width="170"/>
                         <DataGridTextColumn Header="Pelapor" Binding="{Binding ReportedBy}" Width="200"/>

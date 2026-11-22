@@ -82,6 +82,14 @@ public sealed class AdminWorkspace
     public async Task AddManualAsync(ManualHotspotRequest request) { await _backend.AddManualHotspotAsync(request); _ = ReloadAsync(); }
     public async Task UpdateManualAsync(string id, ManualHotspotRequest request) { await _backend.UpdateManualHotspotAsync(id, request); _ = ReloadAsync(); }
     public async Task DeleteHotspotAsync(string id) { await _backend.DeleteHotspotAsync(id); await ReloadAsync(); }
+    public async Task DeleteManualHotspotsAsync(IEnumerable<string> ids)
+    {
+        var idSet = ids.ToHashSet();
+        var manualIds = Hotspots.Where(h => h.IsManual && idSet.Contains(h.Id)).Select(h => h.Id).ToList();
+        if (manualIds.Count == 0) return;
+        await Task.WhenAll(manualIds.Select(id => _backend.DeleteHotspotAsync(id)));
+        await ReloadAsync();
+    }
 
     // ---------- Cuaca & prediksi ----------
     public Task<WeatherDto> GetWeatherAsync(HotspotRow h) => _backend.GetWeatherAsync(h.Id);

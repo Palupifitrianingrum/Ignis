@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Ignis.Shared;
 
 namespace Ignis.Frontend.Models.Admin;
@@ -15,10 +16,12 @@ public static class Fmt
 // Baris tampilan atas DTO dari backend. XAML (DataGrid) mem-bind properti *Text, jadi teks/format UI ditaruh di sini,
 // bukan di entity domain maupun DTO.
 
-public sealed class HotspotRow
+public sealed partial class HotspotRow : ObservableObject
 {
     public HotspotDto Dto { get; }
     public HotspotRow(HotspotDto dto) => Dto = dto;
+
+    [ObservableProperty] private bool isSelected;
 
     public string Id => Dto.Id;
     public double Latitude => Dto.Latitude;

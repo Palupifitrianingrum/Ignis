@@ -407,23 +407,4 @@ public partial class MapCanvasPlaceholder : UserControl
             Name = "World Street Map (English)"
         };
     }
-
-    public static TileLayer CreateCartoVoyagerLayer(string apiKey)
-    {
-        // CARTO Voyager raster tiles with English labels worldwide.
-        // Requires a free API key from https://carto.com/basemaps/apikey to avoid the "API KEY REQUIRED" watermark.
-        var urlTemplate = $"https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}.png?key={apiKey}";
-        var tileSource = new HttpTileSource(
-            new GlobalSphericalMercator(0, 16),
-            urlTemplate,
-            serverNodes: new[] { "a", "b", "c", "d" },
-            name: "CARTO Voyager",
-            configureHttpRequestMessage: req => req.Headers.Add("User-Agent", "Ignis-WPF/1.0")
-        );
-
-        return new TileLayer(tileSource)
-        {
-            Name = "CARTO Voyager (English)"
-        };
-    }
 }

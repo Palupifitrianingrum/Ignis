@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -17,6 +18,22 @@ public class AppSettings
     public string CartoKey { get; set; } = string.Empty;   // API key basemap CARTO (opsional)
     public bool NotificationsEnabled { get; set; } = true;
     public string DefaultRegionName { get; set; } = "Riau";
+    public Dictionary<string, string> DefaultRegionByUser { get; set; } = new();
+
+    public string GetDefaultRegion(string? userId)
+    {
+        if (!string.IsNullOrWhiteSpace(userId) && DefaultRegionByUser.TryGetValue(userId, out var region) && !string.IsNullOrWhiteSpace(region))
+            return region;
+        return string.IsNullOrWhiteSpace(userId) ? DefaultRegionName : "Riau";
+    }
+
+    public void SetDefaultRegion(string? userId, string regionName)
+    {
+        if (!string.IsNullOrWhiteSpace(userId))
+            DefaultRegionByUser[userId] = regionName;
+        else
+            DefaultRegionName = regionName;
+    }
     public bool HideResolvedHotspots { get; set; } = false;
     public int AutoRefreshMinutes { get; set; } = 0;       // 0 = Manual, 5, 15, 30
 

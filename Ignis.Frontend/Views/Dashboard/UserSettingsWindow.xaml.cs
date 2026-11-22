@@ -33,9 +33,10 @@ public partial class UserSettingsWindow : Window
         }
 
         // Preferensi Tampilan Peta
+        var currentRegion = s.GetDefaultRegion(_api.CurrentUser?.Id);
         CmbDefaultRegion.ItemsSource = Region.Defaults.Select(r => r.Name).ToList();
-        CmbDefaultRegion.SelectedItem = Region.Defaults.Any(r => r.Name == s.DefaultRegionName)
-            ? s.DefaultRegionName
+        CmbDefaultRegion.SelectedItem = Region.Defaults.Any(r => r.Name == currentRegion)
+            ? currentRegion
             : "Riau";
         ChkHideResolved.IsChecked = s.HideResolvedHotspots;
 
@@ -77,7 +78,7 @@ public partial class UserSettingsWindow : Window
     {
         var s = _ws.Settings;
         if (CmbDefaultRegion.SelectedItem is string regionName && !string.IsNullOrWhiteSpace(regionName))
-            s.DefaultRegionName = regionName;
+            s.SetDefaultRegion(_api.CurrentUser?.Id, regionName);
 
         s.HideResolvedHotspots = ChkHideResolved.IsChecked == true;
         s.AutoRefreshMinutes = CmbAutoRefresh.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out var mins)

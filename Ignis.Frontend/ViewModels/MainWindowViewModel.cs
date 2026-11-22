@@ -230,7 +230,7 @@ namespace Ignis.Frontend.ViewModels
 
         private void FocusDefaultRegion()
         {
-            var name = _workspace.Settings.DefaultRegionName;
+            var name = _workspace.Settings.GetDefaultRegion(_api.CurrentUser?.Id);
             if (string.IsNullOrWhiteSpace(name) || name == Region.AllName) return;
             var region = Region.Defaults.FirstOrDefault(r => !r.IsAll && r.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (region != null)

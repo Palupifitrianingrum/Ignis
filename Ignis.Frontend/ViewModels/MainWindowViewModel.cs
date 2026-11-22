@@ -644,18 +644,6 @@ namespace Ignis.Frontend.ViewModels
         }
 
         [RelayCommand]
-        private async Task OpenSaved()
-        {
-            if (!_api.IsLoggedIn)
-            {
-                OpenLogin();
-                return;
-            }
-            await LoadDashboardDataAsync();
-            await LoadSavedLocationsAsync();
-        }
-
-        [RelayCommand]
         private void OpenLogin()
         {
             bool? result = _dialogService.ShowLoginDialog();

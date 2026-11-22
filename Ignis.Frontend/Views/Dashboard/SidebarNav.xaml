@@ -207,53 +207,8 @@
                             </Button.Style>
                         </Button>
 
-                        <!-- MENU 2: Saved (No PNG Icon) -->
-                        <Button Command="{Binding OpenSavedCommand}"
-                                Height="42" Margin="0,0,0,26"
-                                Cursor="Hand">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="#133633"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="border" CornerRadius="10" Background="{TemplateBinding Background}" Padding="14,0">
-                                                <Grid>
-                                                    <TextBlock Text="Saved"
-                                                               FontSize="13"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="#FFFFFF"
-                                                               VerticalAlignment="Center"
-                                                               HorizontalAlignment="Left"/>
-
-                                                    <!-- 4 Lokasi Badge -->
-                                                    <Border Background="#092220"
-                                                            CornerRadius="9"
-                                                            Padding="8,3"
-                                                            HorizontalAlignment="Right"
-                                                            VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding SavedLocationsCount, StringFormat='{}{0} Lokasi'}"
-                                                                   FontSize="11"
-                                                                   FontWeight="Bold"
-                                                                   Foreground="#FBBF24"/>
-                                                    </Border>
-                                                </Grid>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="border" Property="Background" Value="#1A4541"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-
                     <!-- Lokasi tersimpan pengguna (rumah, kantor) dengan status dampak simulasi -->
-                    <local:SavedLocationsSection/>
+                    <local:SavedLocationsSection Margin="0,14,0,0"/>
 
                     <!-- Section Header: NEWEST HOTSPOT (Klik untuk memuat & menampilkan hotspot terbaru dari server) -->
                     <Button Command="{Binding ToggleNewestHotspotsCommand}"

@@ -138,8 +138,16 @@ public partial class MapCanvasPlaceholder : UserControl
 
         if (mapInfo?.Feature?["id"] is string id)
         {
-            // Klik pin = simulasikan hotspot itu. Detail hotspot dibuka lewat tombol di panel simulasi.
-            Dispatcher.BeginInvoke(new Action(() => _ = _currentVm.SelectSimulationTargetAsync(id)));
+            var hotspot = _currentVm.VisibleHotspots.FirstOrDefault(h => h.Id == id);
+            // Klik pin = zoom maksimal ke titik hotspot dan simulasikan hotspot itu.
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (hotspot != null)
+                {
+                    OnFocusLocationRequested(hotspot.Latitude, hotspot.Longitude, 16);
+                }
+                _ = _currentVm.SelectSimulationTargetAsync(id);
+            }));
         }
     }
 

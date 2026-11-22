@@ -21,8 +21,13 @@ namespace Ignis.Frontend.ViewModels
 
         [ObservableProperty] private bool canUseSavedLocations;
 
+        [ObservableProperty] private bool isSavedLocationsExpanded = true;
+
         /// <summary>True saat peta menunggu pengguna mengklik titik lokasinya.</summary>
         [ObservableProperty] private bool isPickingLocation;
+
+        [RelayCommand]
+        private void ToggleSavedLocations() => IsSavedLocationsExpanded = !IsSavedLocationsExpanded;
 
         private SavedLocationDraft? _pendingDraft;
 

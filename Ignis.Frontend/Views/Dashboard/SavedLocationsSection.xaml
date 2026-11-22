@@ -49,16 +49,63 @@
         <!-- Akun pengguna terdaftar: daftar lokasi tersimpan -->
         <StackPanel Margin="0,0,0,18" Visibility="{Binding CanUseSavedLocations, Converter={StaticResource B2V}}">
             <Grid Margin="2,0,2,10">
-                <TextBlock Text="LOKASI SAYA" FontSize="11" FontWeight="Bold" Foreground="#658A85" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                <Button Style="{StaticResource AddLocationButton}" Command="{Binding AddLocationCommand}" HorizontalAlignment="Right"
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Command="{Binding ToggleSavedLocationsCommand}"
+                        Cursor="Hand"
+                        HorizontalContentAlignment="Stretch"
+                        Margin="0,0,8,0"
+                        ToolTip="Klik untuk buka/tutup daftar lokasi tersimpan">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#133633"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,7">
+                                            <Grid>
+                                                <TextBlock Text="LOKASI SAYA"
+                                                           FontSize="11"
+                                                           FontWeight="Bold"
+                                                           Foreground="#FFFFFF"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Left"/>
+                                                <TextBlock x:Name="chevron"
+                                                           Text="▸"
+                                                           FontSize="12"
+                                                           FontWeight="Bold"
+                                                           Foreground="#FBBF24"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Right"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="#1A4541"/>
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding IsSavedLocationsExpanded}" Value="True">
+                                                <Setter TargetName="chevron" Property="Text" Value="▾"/>
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Grid.Column="1" Style="{StaticResource AddLocationButton}" Command="{Binding AddLocationCommand}" VerticalAlignment="Center"
                         ToolTip="Simpan lokasi rumah/kantor untuk diberi tahu bila api atau asap mendekat"/>
             </Grid>
 
-            <TextBlock Text="Belum ada lokasi. Tambahkan rumah Anda agar diberi tahu bila simulasi memperkirakan api atau asap mendekat."
-                       Visibility="{Binding HasNoSavedLocations, Converter={StaticResource B2V}}"
-                       FontSize="11" Foreground="#8FB5AF" TextWrapping="Wrap" Margin="2,0,2,4"/>
+            <StackPanel Visibility="{Binding IsSavedLocationsExpanded, Converter={StaticResource B2V}}">
+                <TextBlock Text="Belum ada lokasi. Tambahkan rumah Anda agar diberi tahu bila simulasi memperkirakan api atau asap mendekat."
+                           Visibility="{Binding HasNoSavedLocations, Converter={StaticResource B2V}}"
+                           FontSize="11" Foreground="#8FB5AF" TextWrapping="Wrap" Margin="2,0,2,4"/>
 
-            <ItemsControl ItemsSource="{Binding SavedLocations}">
+                <ItemsControl ItemsSource="{Binding SavedLocations}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Background="#133633" CornerRadius="10" Padding="11,9" Margin="0,0,0,8">
@@ -99,7 +146,8 @@
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </ItemsControl>
+            </StackPanel>
         </StackPanel>
     </StackPanel>
 </UserControl>

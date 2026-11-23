@@ -92,3 +92,4 @@ Tanda `TODO(backend)` di kode menandai hal berikut:
 - Pencabutan token (logout di sisi server) dan pembatasan percobaan login.
 - Pengambilan data FIRMS dan OpenWeather sudah diuji dengan HTTP palsu dan **dengan key sungguhan** (1.010 hotspot nyata diimpor dan diperiksa, cuaca nyata dipakai simulasi). Cara mendapatkan dan memasang key ada di [docs/integrasi-data.md](docs/integrasi-data.md); `GET /api/integrations/status` (admin) memeriksa key kapan saja. Yang tersisa: uji dengan PostgreSQL sungguhan.
 - Jalur PostgreSQL (sequence Id, `EnsureCreated`) belum dijalankan terhadap server PostgreSQL nyata di lingkungan pengembangan ini; tes otomatis memakai EF InMemory.
+<img width="976" height="901" alt="Screenshot 2026-09-06 110250" src="https://github.com/user-attachments/assets/60cad48f-895b-4efe-92ee-9420bfef6f2a" />

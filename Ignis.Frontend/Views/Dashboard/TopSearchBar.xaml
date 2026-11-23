@@ -1,0 +1,256 @@
+<UserControl x:Class="Ignis.Frontend.Views.Dashboard.TopSearchBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="50" d:DesignWidth="680">
+
+    <!-- Top Row: IGNIS Logo + Search Bar + Filter Button -->
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        
+        <!-- IGNIS Brand Title -->
+        <TextBlock Text="IGNIS"
+                   FontSize="18"
+                   FontWeight="Black"
+                   Foreground="#0F172A"
+                   VerticalAlignment="Center"
+                   Margin="0,0,18,0"/>
+
+        <!-- Search Bar Pill -->
+        <Border Background="#FFFFFF"
+                CornerRadius="22"
+                Height="44"
+                Width="380"
+                Padding="14,0"
+                Margin="0,0,12,0">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Opacity="0.08" Color="#000000"/>
+            </Border.Effect>
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Magnifying Glass Search Icon -->
+                <Viewbox Grid.Column="0" Width="16" Height="16" HorizontalAlignment="Left">
+                    <Canvas Width="24" Height="24">
+                        <Path Stroke="#64748B" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Data="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/>
+                    </Canvas>
+                </Viewbox>
+
+                <!-- Search Input & Placeholder -->
+                <Grid Grid.Column="1" Margin="8,0,8,0" VerticalAlignment="Center">
+                    <TextBlock Text="Cari daerah, kawasan hutan, atau koordinat..."
+                               Foreground="#94A3B8"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SearchText}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SearchText}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="0"
+                             Margin="0"
+                             FontSize="12"
+                             Foreground="#0F172A"
+                             VerticalAlignment="Stretch"
+                             VerticalContentAlignment="Center">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SubmitSearchCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </Grid>
+
+                <!-- Shortcut Chip (Ctrl+K) -->
+                <Border Grid.Column="2"
+                        Background="#F1F5F9"
+                        CornerRadius="6"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="Ctrl+K"
+                               FontSize="10"
+                               FontWeight="SemiBold"
+                               Foreground="#64748B"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Filter Button with Badge & Dropdown Popup -->
+        <Grid Width="44" Height="44">
+            <Button x:Name="FilterButton"
+                    Command="{Binding ToggleFilterMenuCommand}"
+                    Width="44" Height="44"
+                    Cursor="Hand"
+                    ToolTip="Filter Layer &amp; Hotspot">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#FFFFFF"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="btnBorder" Background="{TemplateBinding Background}" CornerRadius="22">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Opacity="0.08" Color="#000000"/>
+                                        </Border.Effect>
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="btnBorder" Property="Background" Value="#F8FAFC"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+                <Viewbox Width="18" Height="18">
+                    <Canvas Width="24" Height="24">
+                        <Path Stroke="#0F172A" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Data="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3M1 14h6m2-6h6m2 8h6"/>
+                    </Canvas>
+                </Viewbox>
+            </Button>
+
+            <!-- Orange Count Badge -->
+            <Border Background="#F26500"
+                    Width="16" Height="16"
+                    CornerRadius="8"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,-2,-2,0"
+                    IsHitTestVisible="False">
+                <TextBlock Text="{Binding FilterBadgeCount}"
+                           Foreground="#FFFFFF"
+                           FontSize="9"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+            </Border>
+
+            <!-- Filter Options Popup -->
+            <Popup IsOpen="{Binding IsFilterMenuOpen, Mode=TwoWay}"
+                   PlacementTarget="{Binding ElementName=FilterButton}"
+                   Placement="Bottom"
+                   VerticalOffset="8"
+                   StaysOpen="False"
+                   AllowsTransparency="True">
+                <Border Background="#FFFFFF"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="16"
+                        Width="270"
+                        Margin="4">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Opacity="0.14" Color="#000000"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,12">
+                            <Button DockPanel.Dock="Right"
+                                    Command="{Binding ResetFiltersCommand}"
+                                    Content="Reset"
+                                    Foreground="#F26500"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Cursor="Hand"/>
+                            <TextBlock Text="FILTER HOTSPOT"
+                                       FontSize="11"
+                                       FontWeight="ExtraBold"
+                                       Foreground="#0F172A"
+                                       VerticalAlignment="Center"/>
+                        </DockPanel>
+
+                        <!-- 1. Hotspot Classification -->
+                        <TextBlock Text="HOTSPOT CLASSIFICATION"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#64748B"
+                                   Margin="0,0,0,6"/>
+
+                        <CheckBox Content="Hotspot Satelit (NASA FIRMS)"
+                                  IsChecked="{Binding IsViirsActive, Mode=OneWay}"
+                                  Command="{Binding ToggleViirsCommand}"
+                                  FontSize="12"
+                                  Foreground="#0F172A"
+                                  Margin="0,0,0,6"
+                                  Cursor="Hand"/>
+
+                        <CheckBox Content="Hotspot Manual (Petugas)"
+                                  IsChecked="{Binding IsManualActive, Mode=OneWay}"
+                                  Command="{Binding ToggleManualCommand}"
+                                  FontSize="12"
+                                  Foreground="#0F172A"
+                                  Margin="0,0,0,6"
+                                  Cursor="Hand"/>
+
+                        <CheckBox Content="Keyakinan Tinggi (≥ 70%)"
+                                  IsChecked="{Binding IsConfidenceActive, Mode=OneWay}"
+                                  Command="{Binding ToggleConfidenceCommand}"
+                                  FontSize="12"
+                                  Foreground="#0F172A"
+                                  Margin="0,0,0,8"
+                                  Cursor="Hand"/>
+
+                        <TextBlock Text="Status Hotspot" FontSize="11" Foreground="#475569" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding StatusFilterOptions}"
+                                  SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}"
+                                  FontSize="12"
+                                  Padding="8,5"
+                                  Margin="0,0,0,12"/>
+
+                        <Rectangle Height="1" Fill="#E2E8F0" Margin="0,0,0,12"/>
+
+                        <!-- 2. Time & Date -->
+                        <TextBlock Text="TIME &amp; DATE"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#64748B"
+                                   Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding TimeFilterOptions}"
+                                  SelectedItem="{Binding SelectedTimeFilter, Mode=TwoWay}"
+                                  FontSize="12"
+                                  Padding="8,5"
+                                  Margin="0,0,0,12"/>
+
+                        <Rectangle Height="1" Fill="#E2E8F0" Margin="0,0,0,12"/>
+
+                        <!-- 3. Geographic Filter -->
+                        <TextBlock Text="GEOGRAPHIC FILTER"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#64748B"
+                                   Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding RegionFilterOptions}"
+                                  SelectedItem="{Binding SelectedRegionFilter, Mode=TwoWay}"
+                                  FontSize="12"
+                                  Padding="8,5"
+                                  Margin="0"/>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+
+    </StackPanel>
+</UserControl>

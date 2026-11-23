@@ -1,0 +1,144 @@
+<Window x:Class="Ignis.Frontend.Views.Auth.LoginView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Ignis.Frontend.Views.Auth"
+        mc:Ignorable="d"
+        Title="LoginView" Height="550" Width="800"
+        Icon="/Resources/Icons/logo.ico"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        AllowsTransparency="True"
+        MouseDown="Window_MouseDown">
+
+    <Border Background="#EBEBEB">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="442"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <!-- Panel Kiri: Gambar Satelit penuh dari atas sampai bawah -->
+            <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" ClipToBounds="True">
+                <Grid>
+                    <Image Source="/Resources/Icons/login-bg.jpg" Stretch="UniformToFill"/>
+                    <Border VerticalAlignment="Bottom" Padding="24,40,24,24">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#000F3B33" Offset="0"/>
+                                <GradientStop Color="#CC0F3B33" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel>
+                            <TextBlock Text="IGNIS"
+                                       FontSize="22"
+                                       FontWeight="Bold"
+                                       Foreground="#FFFFFF"/>
+                            <TextBlock Text="Wildfire Monitoring &amp; Spread Prediction"
+                                       FontSize="12"
+                                       Foreground="#E2E8F0"
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Baris Tombol Minimize & Close di Panel Kanan Atas -->
+            <Grid Grid.Column="1" Grid.Row="0" Panel.ZIndex="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="5"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="btnMinimize"
+                        BorderThickness="0"
+                        Content="-"
+                        Foreground="Black"
+                        FontSize="16"
+                        FontFamily="Arial Black"
+                        Cursor="Hand"
+                        Grid.Column="1"
+                        Click="btnMinimize_Click">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#D3D3D3"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Width="18" Height="18"
+                                    CornerRadius="9"
+                                    Background="{TemplateBinding Background}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button x:Name="btnClose"
+                        BorderThickness="0"
+                        Content="x"
+                        Foreground="Black"
+                        FontSize="16"
+                        FontFamily="Arial Black"
+                        Cursor="Hand"
+                        Grid.Column="2"
+                        Click="btnClose_Click">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#D3D3D3"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Width="18" Height="18"
+                                    CornerRadius="9"
+                                    Background="{TemplateBinding Background}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                
+            </Grid>
+
+            <StackPanel Grid.Column="1"
+                        Grid.Row="1"
+                        Orientation="Vertical"
+                        Margin="0,15,0,0">
+                <Image Source="/Resources/Icons/logo%20transparan.png"
+                       Width="56"
+                       Height="56"/>
+
+                <TextBlock Text="{Binding HeaderTitle}"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Margin="0,10,0,0"/>
+
+                <ContentControl Content="{Binding CurrentContent}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

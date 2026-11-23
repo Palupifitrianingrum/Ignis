@@ -1,0 +1,51 @@
+﻿using Ignis.Frontend.ViewModels.Auth;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace Ignis.Frontend.Views.Auth
+{
+    /// <summary>
+    /// Interaction logic for LoginView.xaml
+    /// </summary>
+    public partial class LoginView : Window
+    {
+        public LoginView(LoginWindowViewModel viewModel)
+        {
+            InitializeComponent();
+            DataContext = viewModel;
+
+            viewModel.RequestClose += (success) =>
+            {
+                DialogResult = success;
+                Close();
+            };
+        }
+
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if(e.LeftButton == MouseButtonState.Pressed)
+            {
+                DragMove();
+            }
+        }
+
+        private void btnMinimize_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void btnClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+    }
+}

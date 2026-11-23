@@ -1,0 +1,62 @@
+<UserControl x:Class="Ignis.Frontend.Views.Admin.PengaturanPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:Ignis.Frontend.Views.Admin.Controls">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28">
+            <DockPanel Margin="0,0,0,20">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Batalkan" Style="{StaticResource BtnGhost}" Click="Reset_Click"/>
+                    <Button Content="Simpan Perubahan" Style="{StaticResource Btn}" Margin="8,0,0,0" Click="Save_Click"/>
+                </StackPanel>
+                <TextBlock Style="{StaticResource H1}" Text="Pengaturan"/>
+            </DockPanel>
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+
+                <StackPanel Margin="0,0,16,0" VerticalAlignment="Top">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Aplikasi Desktop"/>
+                            <TextBlock Style="{StaticResource Lbl}" Text="Interval Sinkronisasi Otomatis"/>
+                            <ComboBox x:Name="CmbInterval"><ComboBoxItem>Setiap 1 jam</ComboBoxItem><ComboBoxItem>Setiap 3 jam</ComboBoxItem><ComboBoxItem>Setiap 6 jam</ComboBoxItem><ComboBoxItem>Setiap 12 jam</ComboBoxItem></ComboBox>
+
+                            <Expander Header="Advanced Options (Pengaturan Lanjutan)"
+                                      Foreground="{StaticResource Ink}"
+                                      FontWeight="SemiBold"
+                                      FontSize="13"
+                                      Margin="0,8,0,0">
+                                <StackPanel Margin="0,10,0,0">
+                                    <TextBlock Style="{StaticResource Lbl}" Text="Alamat Server API (Ignis.Api)"/>
+                                    <TextBox x:Name="TxtApiUrl" ToolTip="Contoh: http://localhost:5000/"/>
+
+                                    <TextBlock Style="{StaticResource Lbl}" Text="API Key Peta CARTO (opsional; kosong = peta Esri)"/>
+                                    <PasswordBox x:Name="PwdCarto"/>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource H2}" Text="Notifikasi"/>
+                            <CheckBox x:Name="ChkNotif" Content="Tampilkan banner saat ada notifikasi api atau asap di dekat lokasi pengguna" Margin="0,0,0,4"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Border Grid.Column="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="API Key Layanan Data (disimpan di server)"/>
+                        <TextBlock Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"
+                                   Text="Key yang diisi di sini menggantikan key di file .env server dan langsung berlaku, tanpa restart. Key diuji dulu sebelum disimpan, tersimpan terenkripsi di server, dan tidak pernah ditampilkan lagi."/>
+                        <ctl:IntegrationKeyEditor Provider="firms" Title="NASA FIRMS (MAP_KEY) · data hotspot satelit"/>
+                        <Rectangle Height="1" Fill="{StaticResource Line}" Margin="0,16,0,16"/>
+                        <ctl:IntegrationKeyEditor Provider="weather" Title="OpenWeather · data cuaca"/>
+                        <TextBlock Foreground="{StaticResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,14,0,0"
+                                   Text="Pengaturan lanjutan (sumber satelit, rentang hari, percobaan ulang) diatur di file .env server; lihat docs/integrasi-data.md."/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
